@@ -16,6 +16,8 @@
         "git init": true,
         "git remote": true,
         "git add": true,
-        "git commit": true
+        "git commit": true,
+        "git stash": true,
+        "git ls-remote": true
     }
 }
