@@ -33,6 +33,24 @@
 permission boundary และหน้าจอพื้นฐานที่จำเป็นต่อการใช้งาน โดยยังไม่รวมฟีเจอร์ social,
 marketplace หรือ automation ขั้นสูง
 
+### Roadmap 1 Implementation Sequence
+
+1. **Foundation:** ตั้งค่า Supabase, ใช้ migration ของ profiles, pets, Life Journey, families, family_members และ pet_shares พร้อมเปิด RLS
+2. **Authentication:** สร้างบัญชี, login, logout และตรวจ session ที่กลับมาใช้งานได้
+3. **Home:** แสดงจำนวน Passport, กิจกรรมล่าสุด และทางลัดไปยังสัตว์เลี้ยงแต่ละตัว
+4. **Passport:** สร้าง, ดู และแก้ไขข้อมูลสัตว์เลี้ยง โดยข้อมูลเป็น private ของเจ้าของเป็นค่าเริ่มต้น
+5. **Life Journey:** เพิ่ม, ดู, แก้ไข และจัดเรียง event ตามวันที่
+6. **Family:** สร้างกลุ่ม, เพิ่มสมาชิก และกำหนด role เป็น owner, editor หรือ viewer
+7. **Shared Home:** เจ้าของเลือกแชร์ Passport ให้ Family ด้วยสิทธิ์ view หรือ edit; สมาชิกเห็นเฉพาะข้อมูลที่ได้รับอนุญาต
+8. **Verification:** ทดสอบ owner/member isolation, backup เบื้องต้น และใช้งานด้วยข้อมูลจริง
+
+### Acceptance Criteria For Added Areas
+
+- Home แสดง pets และ events ที่ผู้ใช้มีสิทธิ์เข้าถึงเท่านั้น
+- Family owner จัดการสมาชิกและ role ได้; viewer ไม่สามารถแก้ไขข้อมูล
+- Shared Home ไม่เปิดเผย Passport ที่ไม่ได้ share และสิทธิ์ edit ต้องผ่านทั้ง pet share และ family role
+- การลบสมาชิกหรือยกเลิก share ต้องหยุดการเข้าถึงข้อมูลในการ request ถัดไป
+
 ### สิ่งที่ยังไม่ต้องทำ
 
 ยังไม่ต้องสร้าง:
@@ -66,6 +84,10 @@ marketplace หรือ automation ขั้นสูง
 **4. ระบุสิ่งที่ตั้งใจเผื่อไว้สำหรับอนาคต**
 **5. ระบุสิ่งที่ยังไม่ทำในรอบนี้**
 **6. เสนอแผนการทำงานเป็น Step เล็ก ๆ**
+
+การ implement ใช้ migration แยก `20260826100000_home_shared_home_family.sql` โดยมี `families` เป็นกลุ่ม,
+`family_members` เป็นสมาชิกและ role, และ `pet_shares` เป็นความสัมพันธ์ระหว่าง Passport กับกลุ่ม
+ที่แชร์ ข้อมูลยังคงผูกกับ `owner_id` และใช้ RLS เป็นชั้นบังคับสิทธิ์ ไม่พึ่งการซ่อนปุ่มในหน้าเว็บ
 
 แล้ว **รอผมตรวจสอบและยืนยันก่อนเริ่มสร้างจริง**
 

@@ -13,9 +13,9 @@
 | Profile data | Foundation ready | `profiles` table and signup trigger are defined |
 | Pet Passport | Foundation ready | `pets` table, ownership policies, and timestamps are defined |
 | Life Journey | Foundation ready | `life_journey_events` table and ownership policies are defined |
-| Home | Not started | Basic overview of pets and recent activity remains |
-| Shared Home | Not started | Shared access boundary and member view remain |
-| Family | Not started | Member roles and permissions remain |
+| Home | UI ready | Overview of pets and recent activity is implemented |
+| Shared Home | Foundation ready | Family sharing UI and RLS migration are implemented; Supabase verification remains |
+| Family | UI ready | Create family, add member, and assign role controls are implemented |
 | Passport and timeline UI | Not started | Create, view, edit, and delete screens remain |
 | Real-data verification | Not started | Requires Supabase project configuration and end-to-end testing |
 | Backup and recovery | Not started | Basic operational procedure and restore test remain |
@@ -33,6 +33,8 @@
 - [ ] Add Shared Home access and member view
 - [ ] Add Family members, roles, and permissions
 - [ ] Define data model and RLS for shared access
+- [x] Build initial Home, Shared Home, and Family interface
+- [x] Add incremental migration for families, members, and pet shares
 - [ ] Verify RLS with an owner and a different authenticated user
 - [ ] Define the basic backup and recovery procedure
 - [ ] Test with real user and pet data
@@ -48,7 +50,8 @@ QR, Marketplace, Biometrics, Advanced Storage, Social, AI Features, Gamification
 
 ## Validation Notes
 
-- Migration: `supabase/migrations/20260826000000_init_schema.sql`
+- Migrations: `supabase/migrations/20260826000000_init_schema.sql` and `supabase/migrations/20260826100000_home_shared_home_family.sql`
+- The Home/Shared Home/Family migration is a full reset of application tables in `public`; back up production data before applying it. Supabase Auth users are preserved.
 - Run `npm run lint` before each commit.
 - Run `npm run build` before pushing a release-ready change.
 - Never commit `.env.local`; use `.env.local.example` for required variable names.
@@ -61,3 +64,5 @@ QR, Marketplace, Biometrics, Advanced Storage, Social, AI Features, Gamification
 - Added the Roadmap 1 schema migration for profiles, pets, and Life Journey events.
 - Added initial status tracking for implementation and verification work.
 - Added Home, Shared Home, and Family to the active planning scope.
+- Built the first working Home, Passport, Life Journey, Shared Home, and Family interface.
+- Added the incremental Family and sharing migration with RLS policies.
