@@ -30,7 +30,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-8 text-center">
-        {/* Logo */}
         <div className="mx-auto h-24 w-24 bg-orange-100 rounded-full flex items-center justify-center">
           <span className="text-5xl">🐱</span>
         </div>
@@ -40,7 +39,6 @@ export default function LoginPage() {
           เข้าสู่ระบบเพื่อจัดการ Passport ของสัตว์เลี้ยงของคุณ
         </p>
 
-        {/* Google Button */}
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
