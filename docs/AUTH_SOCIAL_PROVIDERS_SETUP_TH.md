@@ -286,3 +286,67 @@ https://<PROJECT_REF>.supabase.co/auth/v1/callback
 4. เพิ่ม LINE ผ่าน provider ที่ Supabase รองรับ หรือ adapter ฝั่ง server
 5. เพิ่ม TikTok หลังตรวจ product approval และ scopes
 6. ทดสอบ RLS, session persistence และ account recovery ทุกครั้งก่อนเปิด provider ให้ผู้ใช้จริง
+
+## ตั้งค่า Vercel ร่วมกับ Supabase Auth
+
+### Deploy โปรเจกต์
+
+1. เปิด Vercel แล้วเลือก `Add New -> Project`
+2. Import repository `BombINdyBoy/Meow-World`
+3. เลือก branch `main`
+4. ตรวจให้ Framework เป็น `Next.js` และ Root Directory เป็นโฟลเดอร์โปรเจกต์
+5. กด Deploy หลังตั้งค่า environment variables
+
+### Environment Variables ใน Vercel
+
+ไปที่ `Project Settings -> Environment Variables` แล้วเพิ่มค่าต่อไปนี้ใน `Production`, `Preview` และ `Development` ตามที่ต้องการ:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<PROJECT_REF>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_OR_PUBLISHABLE_KEY>
+```
+
+ห้ามเพิ่ม `service_role` key ใน Vercel ตัวแปรที่ขึ้นต้นด้วย `NEXT_PUBLIC_` อาจถูกส่งไป browser ได้ จึงใช้ได้เฉพาะ URL และ anon/publishable key เท่านั้น
+
+### Supabase Production URL
+
+หลังได้ domain จาก Vercel ให้ไปที่ `Supabase -> Authentication -> URL Configuration` แล้วตั้งค่า:
+
+- `Site URL`: `https://<your-project>.vercel.app`
+- `Redirect URLs`: `https://<your-project>.vercel.app/auth/callback`
+
+ถ้าใช้ custom domain ให้เพิ่ม callback URL ของ custom domain ด้วย และคง `localhost` ไว้สำหรับ local development
+
+### Provider Callback
+
+OAuth provider แต่ละรายยังต้องใช้ callback ของ Supabase ไม่ใช่ Vercel callback โดยตรง:
+
+```text
+https://<PROJECT_REF>.supabase.co/auth/v1/callback
+```
+
+ส่วน `redirectTo` ในแอปให้ชี้กลับไปที่:
+
+```text
+https://<your-project>.vercel.app/auth/callback
+```
+
+### ตรวจสอบหลัง Deploy
+
+1. เปิด Vercel deployment URL
+2. สมัครหรือล็อกอินด้วย Email/Password
+3. สร้าง Passport และ Life Journey event
+4. Refresh หน้า แล้วตรวจว่า session และข้อมูลยังอยู่
+5. ทดสอบ logout แล้ว login กลับเข้ามาใหม่
+6. ตรวจ Vercel Runtime Logs หากเกิด error
+7. ตรวจ Supabase Auth Logs และ Postgres Logs หาก login หรือ RLS ผิดปกติ
+
+### ก่อนเปิดใช้งานจริง
+
+- [ ] Apply migration และ backup database แล้ว
+- [ ] ตั้ง Vercel environment variables ครบทุก environment
+- [ ] เปลี่ยน Supabase Site URL เป็น domain จริง
+- [ ] เพิ่ม production redirect URL แบบตรงตัว
+- [ ] ตรวจว่า OAuth provider ใช้ callback URL ที่ถูกต้อง
+- [ ] ทดสอบ RLS ด้วย owner และ member คนละบัญชี
+- [ ] Redeploy หลังแก้ environment variables
