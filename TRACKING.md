@@ -1,7 +1,7 @@
 # Meow World V4.1 Heart Edition Tracking
 
 **Updated:** 2026-08-26  
-**Scope:** Roadmap 1 - Passport + Life Journey
+**Scope:** Roadmap 1 - Passport + Life Journey, Home, Shared Home, and Family
 
 ## Current Status
 
@@ -13,6 +13,9 @@
 | Profile data | Foundation ready | `profiles` table and signup trigger are defined |
 | Pet Passport | Foundation ready | `pets` table, ownership policies, and timestamps are defined |
 | Life Journey | Foundation ready | `life_journey_events` table and ownership policies are defined |
+| Home | Not started | Basic overview of pets and recent activity remains |
+| Shared Home | Not started | Shared access boundary and member view remain |
+| Family | Not started | Member roles and permissions remain |
 | Passport and timeline UI | Not started | Create, view, edit, and delete screens remain |
 | Real-data verification | Not started | Requires Supabase project configuration and end-to-end testing |
 | Backup and recovery | Not started | Basic operational procedure and restore test remain |
@@ -26,6 +29,10 @@
 - [ ] Add Passport create, view, and edit flows
 - [ ] Add Life Journey event create, view, edit, and delete flows
 - [ ] Add timeline sorting and empty/loading/error states
+- [ ] Add Home overview for pets and recent activity
+- [ ] Add Shared Home access and member view
+- [ ] Add Family members, roles, and permissions
+- [ ] Define data model and RLS for shared access
 - [ ] Verify RLS with an owner and a different authenticated user
 - [ ] Define the basic backup and recovery procedure
 - [ ] Test with real user and pet data
@@ -33,11 +40,11 @@
 
 ## Foundation Reserved For Later
 
-The schema keeps ownership and event boundaries explicit so future work can add sharing, QR, storage, social, AI, and multi-species capabilities without changing the Roadmap 1 data contract unnecessarily. Those features are not implemented in this iteration.
+The schema keeps ownership and event boundaries explicit so Home, Shared Home, and Family can be added without changing the Roadmap 1 data contract unnecessarily. QR, storage, social, AI, and multi-species capabilities remain reserved for later work.
 
 ## Out Of Scope For This Iteration
 
-Home, Shared Home, Family, QR, Marketplace, Biometrics, Advanced Storage, Social, AI Features, Gamification, Subscription, Multi-species ecosystem, and the full Graphic Engine.
+QR, Marketplace, Biometrics, Advanced Storage, Social, AI Features, Gamification, Subscription, Multi-species ecosystem, and the full Graphic Engine.
 
 ## Validation Notes
 
@@ -53,3 +60,4 @@ Home, Shared Home, Family, QR, Marketplace, Biometrics, Advanced Storage, Social
 - Created the V4.1 Next.js/Supabase project foundation.
 - Added the Roadmap 1 schema migration for profiles, pets, and Life Journey events.
 - Added initial status tracking for implementation and verification work.
+- Added Home, Shared Home, and Family to the active planning scope.
