@@ -2,6 +2,9 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+อ่านคู่มือการตั้งค่า Supabase Auth และ deploy ได้ที่
+[docs/AUTH_AND_DEPLOYMENT_SETUP.md](docs/AUTH_AND_DEPLOYMENT_SETUP.md)
+
 First, run the development server:
 
 ```bash
