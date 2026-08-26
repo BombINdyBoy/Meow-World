@@ -1,5 +1,6 @@
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- Enable UUID extensions (Supabase usually has these enabled by default)
+create extension if not exists "uuid-ossp" with schema extensions;
+create extension if not exists "pgcrypto" with schema extensions;
 
 -- 1. Profiles Table (Extends Supabase Auth)
 create table public.profiles (
