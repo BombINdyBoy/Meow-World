@@ -2,18 +2,19 @@
 
 import React, { useState } from 'react';
 import { X, Users, Shield, ShieldCheck, Eye, Edit3, UserPlus, Trash2 } from 'lucide-react';
-import { Family, FamilyMember, UserRole } from '@/types';
+import { Family, FamilyMember, UserRole, UserProfile } from '@/types';
 
 interface FamilyMembersModalProps {
   isOpen: boolean;
   onClose: () => void;
   family: Family;
   members: FamilyMember[];
-  currentUserId: string;
-  onUpdateRole: (userId: string, newRole: UserRole) => void;
-  onRemoveMember: (userId: string) => void;
-  onAddMemberDirectly: (name: string, email: string, role: UserRole) => void;
-  onOpenQRInvite: () => void;
+  currentUser: UserProfile;
+  userRole: UserRole;
+  onUpdateRole?: (userId: string, newRole: UserRole) => void;
+  onRemoveMember?: (userId: string) => void;
+  onAddMemberDirectly?: (name: string, email: string, role: UserRole) => void;
+  onOpenQRInvite?: () => void;
 }
 
 export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
@@ -21,7 +22,8 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
   onClose,
   family,
   members,
-  currentUserId,
+  currentUser,
+  userRole,
   onUpdateRole,
   onRemoveMember,
   onAddMemberDirectly,
@@ -34,11 +36,11 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isOwner = family.owner_id === currentUserId;
+  const isOwner = family.owner_id === currentUser.id;
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim() || !newEmail.trim()) return;
+    if (!newName.trim() || !newEmail.trim() || !onAddMemberDirectly) return;
     onAddMemberDirectly(newName.trim(), newEmail.trim(), newRole);
     setNewName('');
     setNewEmail('');
@@ -115,7 +117,7 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
                 รายชื่อผู้ดูแล ({members.length})
               </h4>
               <button
-                onClick={onOpenQRInvite}
+                onClick={() => onOpenQRInvite && onOpenQRInvite()}
                 className="text-xs font-bold text-[#E06D53] hover:underline"
               >
                 + เชิญด้วย QR Token
@@ -143,7 +145,7 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
                       <span className="font-bold text-sm text-[#1F1E1D] truncate">
                         {member.display_name}
                       </span>
-                      {member.user_id === currentUserId && (
+                      {member.user_id === currentUser.id && (
                         <span className="text-[10px] bg-[#E8E2D9] px-1.5 py-0.2 rounded text-[#59554F]">
                           คุณ
                         </span>
@@ -158,7 +160,7 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
                   {isOwner && member.role !== 'owner' ? (
                     <select
                       value={member.role}
-                      onChange={(e) => onUpdateRole(member.user_id, e.target.value as UserRole)}
+                      onChange={(e) => onUpdateRole && onUpdateRole(member.user_id, e.target.value as UserRole)}
                       className="text-xs font-bold rounded-xl border border-[#E8E2D9] bg-white px-2.5 py-1.5 text-[#1F1E1D] focus:border-[#E06D53] outline-none"
                     >
                       <option value="editor">ผู้ดูแลร่วม (Caretaker)</option>
@@ -170,7 +172,7 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
 
                   {isOwner && member.role !== 'owner' && (
                     <button
-                      onClick={() => onRemoveMember(member.user_id)}
+                      onClick={() => onRemoveMember && onRemoveMember(member.user_id)}
                       className="p-1.5 text-[#8C867E] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="ลบออกจากบ้าน"
                     >
