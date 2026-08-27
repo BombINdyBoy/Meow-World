@@ -1,497 +1,263 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Navbar } from '@/components/layout/Navbar';
-import { AuthScreen } from '@/components/auth/AuthScreen';
-import { HomeMode } from '@/components/home/HomeMode';
-import { PassportView } from '@/components/passport/PassportView';
-import { CertificateListView } from '@/components/certificate/CertificateListView';
-import { FamilyMembersModal } from '@/components/home/FamilyMembersModal';
-import { QRInviteModal } from '@/components/home/QRInviteModal';
-import { DigitalCertificateModal } from '@/components/certificate/DigitalCertificateModal';
-import { CertificateViewerModal } from '@/components/certificate/CertificateViewerModal';
-import { AddPetModal } from '@/components/passport/AddPetModal';
-import { JourneyComposer } from '@/components/home/JourneyComposer';
-import {
-  DigitalCertificate,
-  EventCategory,
-  Family,
-  FamilyMember,
-  JourneyEvent,
-  Pet,
-  UserProfile,
-  UserRole,
-} from '@/types';
-import {
-  CURRENT_USER,
-  MOCK_CERTIFICATES,
-  MOCK_EVENTS,
-  MOCK_FAMILIES,
-  MOCK_FAMILY_MEMBERS,
-  MOCK_PETS,
-} from '@/utils/mockData';
-import { createClient } from '@/utils/supabase/client';
+import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
-export default function Home() {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isDemoMode, setIsDemoMode] = useState(false);
-  const [currentTab, setCurrentTab] = useState<string>('home');
+interface Member {
+  id: string;
+  name: string;
+  role: "human" | "pet";
+  avatar?: string;
+}
 
-  // Core Application State
-  const [activeFamily, setActiveFamily] = useState<Family | null>(MOCK_FAMILIES[0]);
-  const [members, setMembers] = useState<FamilyMember[]>(MOCK_FAMILY_MEMBERS);
-  const [pets, setPets] = useState<Pet[]>(MOCK_PETS);
-  const [events, setEvents] = useState<JourneyEvent[]>(MOCK_EVENTS);
-  const [certificates, setCertificates] = useState<DigitalCertificate[]>(MOCK_CERTIFICATES);
-  const [selectedPetId, setSelectedPetId] = useState<string>(MOCK_PETS[0]?.id || '');
+interface CreateMomentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  homeId: string; // ID ของบ้านปัจจุบัน
+}
 
-  // Modals & Drawers
-  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-  const [isQRInviteModalOpen, setIsQRInviteModalOpen] = useState(false);
-  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
-  const [isNewCertModalOpen, setIsNewCertModalOpen] = useState(false);
-  const [isAddPetModalOpen, setIsAddPetModalOpen] = useState(false);
-  const [viewingCert, setViewingCert] = useState<DigitalCertificate | null>(null);
-  const [certTargetPetId, setCertTargetPetId] = useState<string | undefined>(undefined);
+export default function CreateMomentModal({ isOpen, onClose, homeId }: CreateMomentModalProps) {
+  const [story, setStory] = useState("");
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [step, setStep] = useState<"write" | "tag" | "review">("write");
 
-  const isConfigured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-  const supabase = isConfigured ? createClient() : null;
+  const supabase = createClient();
+  const router = useRouter();
 
-  // Supabase Auth Listener
+  // โหลดข้อมูลสมาชิกในบ้านเมื่อ Modal เปิด
   useEffect(() => {
-    if (!isConfigured || !supabase) return;
+    if (isOpen && homeId) {
+      loadMembers();
+    }
+  }, [isOpen, homeId]);
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email,
-          displayName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'คุณผู้ดูแล',
-          avatarUrl: data.user.user_metadata?.avatar_url,
-        });
+  const loadMembers = async () => {
+    // ดึงข้อมูล Pets และ Profiles ที่เชื่อมโยงกับบ้านนี้
+    // (จำลองข้อมูลสำหรับตอนนี้ - ต้องเชื่อม API จริงในขั้นตอนต่อไป)
+    const mockMembers: Member[] = [
+      { id: "1", name: "พ่อ", role: "human" },
+      { id: "2", name: "แม่", role: "human" },
+      { id: "3", name: "ลูก", role: "human" },
+      { id: "4", name: "มูมู่", role: "pet", avatar: "/cat-avatar.png" },
+      { id: "5", name: "เจ้าดำ", role: "pet" },
+    ];
+    setMembers(mockMembers);
+  };
 
-        setUser({
-          id: session.user.id,
-          email: session.user.email,
-          displayName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'คุณผู้ดูแล',
-          avatarUrl: session.user.user_metadata?.avatar_url,
-        });
-      } else if (!isDemoMode) {
-        setUser(null);
-      }
-    });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setMediaFiles((prev) => [...prev, ...newFiles]);
+      
+      // สร้าง Preview
+      const previews = newFiles.map(file => URL.createObjectURL(file));
+      setMediaPreviews((prev) => [...prev, ...previews]);
+    }
+  };
 
-    return () => authListener.subscription.unsubscribe();
-  }, [isConfigured, isDemoMode, supabase]);
+  const toggleMemberTag = (memberId: string) => {
+    setSelectedMembers(prev => 
+      prev.includes(memberId) 
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
 
-  // Load Real Supabase Data if logged in and configured
-  const loadSupabaseData = useCallback(async () => {
-    if (!user || isDemoMode || !supabase) return; 
-	
-
+  const handleSubmit = async () => {
+    if (!story.trim() && mediaFiles.length === 0) return;
+    
+    setIsSubmitting(true);
     try {
-      const [petsRes, eventsRes, familiesRes, membersRes, certsRes] = await Promise.all([
-        supabase.from('pets').select('*').order('created_at', { ascending: false }),
-        supabase.from('life_journey_events').select('*').order('event_date', { ascending: false }),
-        supabase.from('families').select('*').order('created_at', { ascending: false }),
-        supabase.from('family_members').select('*'),
-        supabase.from('digital_certificates').select('*').order('created_at', { ascending: false }),
-      ]);
-
-      if (petsRes.data && petsRes.data.length > 0) {
-        setPets(petsRes.data as Pet[]);
-        if (!selectedPetId) setSelectedPetId(petsRes.data[0].id);
-      }
-      if (eventsRes.data && eventsRes.data.length > 0) {
-        setEvents(eventsRes.data as JourneyEvent[]);
-      }
-      if (familiesRes.data && familiesRes.data.length > 0) {
-        setActiveFamily(familiesRes.data[0] as Family);
-      }
-      if (membersRes.data && membersRes.data.length > 0) {
-        setMembers(membersRes.data as FamilyMember[]);
-      }
-      if (certsRes.data && certsRes.data.length > 0) {
-        setCertificates(certsRes.data as DigitalCertificate[]);
-      }
-    } catch (err) {
-      console.warn('Using local store fallback', err);
-    }
-  }, [user, isDemoMode, selectedPetId, supabase]);
-
-  useEffect(() => {
-    if (user && !isDemoMode) {
-      const timer = window.setTimeout(() => {
-        void loadSupabaseData();
-      }, 0);
-      return () => window.clearTimeout(timer);
-    }
-  }, [user, isDemoMode, loadSupabaseData]);
-
-  const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-      setIsDemoMode(false);
-      setUser(null);
-    }
-	
-  // Auth Handlers
-  const handleAuthenticate = async (
-    email: string,
-    pass: string,
-    mode: 'login' | 'signup',
-    fullName?: string
-  ): Promise<string | null> => {
-    if (!isConfigured || !supabase) {
-      setUser({
-        id: 'usr-local-01',
-        email,
-        displayName: fullName || email.split('@')[0],
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      });
-      return null;
-    }
-
-    if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: pass,
-        options: { data: { full_name: fullName } },
-      });
-      if (error) return error.message;
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) return error.message;
-    }
-    return null;
- 
-
-  const handleLoginDemo = () => {
-    setIsDemoMode(true);
-    setUser(CURRENT_USER);
-  };
-
-  const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    setIsDemoMode(false);
-    setUser(null);
-  };
-
-  // Determine current user's role in active family
-  const currentMember = members.find((m) => m.user_id === user?.id);
-  const userRole: UserRole = activeFamily?.owner_id === user?.id ? 'owner' : currentMember?.role || 'owner';
-
-  // State Handlers: Add Post / Journey Event
-  const handleAddEvent = (eventData: {
-    pet_id?: string;
-    tagged_pet_ids?: string[];
-    tagged_user_ids?: string[];
-    event_date: string;
-    event_type: EventCategory;
-    title: string;
-    description: string;
-    image_url?: string;
-    video_url?: string;
-    location?: string;
-  }) => {
-    const newEvt: JourneyEvent = {
-      id: `evt-${Date.now()}`,
-      ...eventData,
-      author_id: user?.id,
-      author_name: user?.displayName || 'คุณผู้ดูแล',
-      author_avatar: user?.avatarUrl,
-      likes_count: 0,
-      is_liked: false,
-      comments: [],
-      created_at: new Date().toISOString(),
-    };
-
-    setEvents([newEvt, ...events]);
-    setIsNewPostModalOpen(false);
-
-    // Save to Supabase if connected
-    if (supabase && user && !isDemoMode) {
-      supabase.from('life_journey_events').insert({
-        pet_id: eventData.pet_id || (pets[0]?.id ?? null),
-        event_date: eventData.event_date,
-        event_type: eventData.event_type,
-        title: eventData.title,
-        description: eventData.description,
-      });
-    }
-  };
-
-  // Toggle Heart Like
-  const handleToggleLike = (eventId: string) => {
-    setEvents((prev) =>
-      prev.map((evt) => {
-        if (evt.id === eventId) {
-          const isLiked = !evt.is_liked;
-          return {
-            ...evt,
-            is_liked: isLiked,
-            likes_count: isLiked ? (evt.likes_count || 0) + 1 : Math.max(0, (evt.likes_count || 0) - 1),
-          };
+      // 1. อัปโหลดไฟล์มีเดีย (ถ้ามี)
+      const mediaUrls: string[] = [];
+      if (mediaFiles.length > 0) {
+        // จำลองการอัปโหลด - ต้องใช้ Supabase Storage จริง
+        for (const file of mediaFiles) {
+          // const { data, error } = await supabase.storage.from('moments').upload(...)
+          // if (error) throw error;
+          mediaUrls.push("dummy-url.jpg"); 
         }
-        return evt;
-      })
-    );
-  };
-
-  // Add Comment
-  const handleAddComment = (eventId: string, content: string) => {
-    setEvents((prev) =>
-      prev.map((evt) => {
-        if (evt.id === eventId) {
-          const newComment = {
-            id: `cmt-${Date.now()}`,
-            event_id: eventId,
-            user_id: user?.id || 'usr-guest',
-            user_name: user?.displayName || 'ผู้ร่วมดูแล',
-            user_avatar: user?.avatarUrl,
-            content,
-            created_at: new Date().toISOString(),
-          };
-          return {
-            ...evt,
-            comments: [...(evt.comments || []), newComment],
-          };
-        }
-        return evt;
-      })
-    );
-  };
-
-  // Delete Post
-  const handleDeleteEvent = (eventId: string) => {
-    if (confirm('คุณต้องการลบโพสต์นี้ใช่หรือไม่?')) {
-      setEvents((prev) => prev.filter((e) => e.id !== eventId));
-      if (supabase && !isDemoMode) {
-        supabase.from('life_journey_events').delete().eq('id', eventId);
       }
-    }
-  };
 
-  // Save Generated Digital Certificate & Auto-Log Milestone Event
-  const handleSaveCertificate = (cert: DigitalCertificate) => {
-    setCertificates([cert, ...certificates]);
-
-    const autoEvent: JourneyEvent = {
-      id: `evt-cert-${Date.now()}`,
-      pet_id: cert.pet_id,
-      tagged_pet_ids: [cert.pet_id],
-      tagged_user_ids: [user?.id || 'usr-heart-001'],
-      author_id: user?.id,
-      author_name: user?.displayName || 'ระบบ Meow World',
-      author_avatar: user?.avatarUrl,
-      event_date: cert.issue_date,
-      event_type: 'certificate',
-      title: `👑 ได้รับใบรับรองดิจิทัล: ${cert.title} ✨`,
-      description: `ถ่ายภาพเอกสารจริงและ Generate Meow World Digital Certificate เลขที่ ${cert.certificate_no} ครอบทับเอกสารจริงเรียบร้อยแล้ว มีตราประทับ Hologram และ QR Code ตรวจสอบความแท้จริง`,
-      image_url: cert.original_doc_url,
-      certificate_id: cert.id,
-      likes_count: 1,
-      is_liked: true,
-      comments: [],
-      created_at: new Date().toISOString(),
-    };
-    setEvents([autoEvent, ...events]);
-
-    if (supabase && !isDemoMode) {
-      supabase.from('digital_certificates').insert(cert);
-    }
-  };
-
-  // Add Pet & Auto-Log Birth & Passport Milestones
-  const handleAddPet = (petData: Omit<Pet, 'id' | 'created_at'>) => {
-    const newPet: Pet = {
-      id: `pet-${Date.now()}`,
-      ...petData,
-      created_at: new Date().toISOString(),
-    };
-    setPets([newPet, ...pets]);
-    setSelectedPetId(newPet.id);
-
-    const newMilestones: JourneyEvent[] = [];
-
-    // 1. If birth_date is provided, create a birth celebration memory
-    if (petData.birth_date) {
-      newMilestones.push({
-        id: `evt-birth-${Date.now()}`,
-        pet_id: newPet.id,
-        tagged_pet_ids: [newPet.id],
-        tagged_user_ids: [user?.id || 'usr-heart-001'],
-        author_id: user?.id,
-        author_name: user?.displayName || 'เจ้าของบ้าน',
-        author_avatar: user?.avatarUrl,
-        event_date: petData.birth_date,
-        event_type: 'birth',
-        title: `🐣 บันทึกแรกเกิด: ยินดีต้อนรับ ${newPet.name} สู่โลกใบนี้ 🍼`,
-        description: `น้องเกิดเมื่อวันที่ ${petData.birth_date} สายพันธุ์ ${petData.breed || petData.species} เป็นจุดเริ่มต้นของ Life Journey`,
-        image_url: newPet.avatar_url,
-        likes_count: 5,
-        is_liked: true,
-        comments: [],
+      // 2. บันทึกข้อมูลลงตาราง life_journey_events (หรือ moments)
+      const { error } = await supabase.from('life_journey_events').insert({
+        home_id: homeId,
+        content: story,
+        media_urls: mediaUrls,
+        participant_ids: selectedMembers, // แท็กคนที่ร่วมเหตุการณ์
+        event_type: 'memory',
         created_at: new Date().toISOString(),
       });
-    }
 
-    // 2. Passport registration event
-    newMilestones.push({
-      id: `evt-passport-${Date.now() + 1}`,
-      pet_id: newPet.id,
-      tagged_pet_ids: [newPet.id],
-      tagged_user_ids: [user?.id || 'usr-heart-001'],
-      author_id: user?.id,
-      author_name: user?.displayName || 'เจ้าของบ้าน',
-      author_avatar: user?.avatarUrl,
-      event_date: new Date().toISOString().split('T')[0],
-      event_type: 'passport',
-      title: `📘 เปิด Living Passport ประจำตัวของ ${newPet.name} อย่างเป็นทางการ`,
-      description: `สร้างบัตรพาสปอร์ตประจำตัวและเริ่มบันทึกการเดินทางของชีวิตใน Meow World Heart Edition`,
-      image_url: newPet.avatar_url,
-      likes_count: 4,
-      is_liked: true,
-      comments: [],
-      created_at: new Date().toISOString(),
-    });
+      if (error) throw error;
 
-    setEvents([...newMilestones, ...events]);
-
-    if (supabase && !isDemoMode) {
-      supabase.from('pets').insert(newPet);
+      // รีเซ็ตและปิด Modal
+      resetForm();
+      onClose();
+      router.refresh(); // รีเฟรชหน้าแรกเพื่อดูโมเมนต์ใหม่
+    } catch (error) {
+      console.error("Error creating moment:", error);
+      alert("เกิดข้อผิดพลาดในการบันทึกความทรงจำ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Update Pet
-  const handleUpdatePet = (updatedPet: Pet) => {
-    setPets((prev) => prev.map((p) => (p.id === updatedPet.id ? updatedPet : p)));
-    if (supabase && !isDemoMode) {
-      supabase.from('pets').update(updatedPet).eq('id', updatedPet.id);
-    }
+  const resetForm = () => {
+    setStory("");
+    setMediaFiles([]);
+    setMediaPreviews([]);
+    setSelectedMembers([]);
+    setStep("write");
   };
 
-  // Co-owner Member Management
-  const handleUpdateMemberRole = (memberUserId: string, newRole: UserRole) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.user_id === memberUserId ? { ...m, role: newRole } : m))
-    );
-  };
-
-  const handleRemoveMember = (memberUserId: string) => {
-    if (confirm('คุณต้องการลบผู้เลี้ยงร่วมท่านนี้ออกจากบ้านใช่หรือไม่?')) {
-      setMembers((prev) => prev.filter((m) => m.user_id !== memberUserId));
-    }
-  };
-
-  const handleAddMemberDirectly = (name: string, email: string, role: UserRole) => {
-    const newMember: FamilyMember = {
-      family_id: activeFamily?.id || 'fam-meow-villa',
-      user_id: `usr-${Date.now()}`,
-      display_name: name,
-      email,
-      role,
-      joined_at: new Date().toISOString(),
-    };
-    setMembers([...members, newMember]);
-    alert(`เพิ่ม ${name} เป็นผู้ร่วมดูแลเรียบร้อยแล้ว!`);
-  };
-
-  // Join House with QR Token
-  const handleJoinWithToken = (token: string): boolean => {
-    if (token.toUpperCase().includes('MW-FAM')) {
-      const newMember: FamilyMember = {
-        family_id: activeFamily?.id || 'fam-meow-villa',
-        user_id: user?.id || `usr-${Date.now()}`,
-        display_name: user?.displayName || 'ผู้ร่วมดูแลใหม่',
-        email: user?.email,
-        role: 'editor',
-        joined_at: new Date().toISOString(),
-      };
-      setMembers([...members, newMember]);
-      return true;
-    }
-    return false;
-  };
-
-  const handleViewCertById = (certId: string) => {
-    const targetCert = certificates.find((c) => c.id === certId);
-    if (targetCert) {
-      setViewingCert(targetCert);
-    }
-  };
-
-  // If not logged in, show polished Auth screen
-  if (!user) {
-    return <AuthScreen onAuthenticate={handleAuthenticate} onLoginDemo={handleLoginDemo} />;
-  }
-
-  const viewingPet = pets.find((p) => p.id === viewingCert?.pet_id);
+  if (!isOpen) return null;
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#1F1E1D] flex flex-col selection:bg-[#E06D53]/20 selection:text-[#E06D53]">
-      {/* Top Navbar */}
-      <Navbar
-        currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
-        user={user}
-        activeFamily={activeFamily}
-        pets={pets}
-        onOpenNewPost={() => setIsNewPostModalOpen(true)}
-        onOpenNewCert={() => {
-          setCertTargetPetId(selectedPetId || pets[0]?.id);
-          setIsNewCertModalOpen(true);
-        }}
-        onSignOut={handleSignOut}
-        onOpenFamilyModal={() => setIsMembersModalOpen(true)}
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+        
+        {/* Header */}
+        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+          <h2 className="text-lg font-bold text-gray-800">
+            {step === "write" && "✨ มีเรื่องราวอะไรวันนี้?"}
+            {step === "tag" && "🏷️ ใครอยู่ด้วยกันบ้าง?"}
+            {step === "review" && "✅ พร้อมบันทึกแล้ว"}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
 
-      {/* Main Workspace Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8">
-        {currentTab === 'home' && (
-          <HomeMode
-            family={activeFamily || MOCK_FAMILIES[0]}
-            members={members}
-            pets={pets}
-            events={events}
-            currentUser={user}
-            userRole={userRole}
-            onOpenMembersModal={() => setIsMembersModalOpen(true)}
-            onOpenQRInviteModal={() => setIsQRInviteModalOpen(true)}
-            onSelectPet={(id) => {
-              setSelectedPetId(id);
-              setCurrentTab('passport');
-            }}
-            onAddNewPet={() => setIsAddPetModalOpen(true)}
-            onAddEvent={handleAddEvent}
-            onToggleLike={handleToggleLike}
-            onAddComment={handleAddComment}
-            onDeleteEvent={handleDeleteEvent}
-            onViewCertById={handleViewCertById}
-          />
-        )}
+        {/* Content Area */}
+        <div className="p-4 overflow-y-auto flex-1">
+          
+          {/* Step 1: เขียนเรื่องราว & อัปโหลดรูป */}
+          {step === "write" && (
+            <div className="space-y-4">
+              <textarea
+                value={story}
+                onChange={(e) => setStory(e.target.value)}
+                placeholder="เล่าเรื่องราววันนี้ให้ฟังหน่อย... เกิดอะไรขึ้น? รู้สึกยังไง?"
+                className="w-full h-32 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-200 focus:border-orange-400 resize-none text-gray-700 placeholder-gray-400"
+              />
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-600">เพิ่มรูปภาพหรือวิดีโอ</label>
+                <div className="flex flex-wrap gap-2">
+                  {mediaPreviews.map((src, idx) => (
+                    <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                      <Image src={src} alt="preview" fill className="object-cover" />
+                      <button 
+                        onClick={() => {
+                          const newFiles = mediaFiles.filter((_, i) => i !== idx);
+                          const newPreviews = mediaPreviews.filter((_, i) => i !== idx);
+                          setMediaFiles(newFiles);
+                          setMediaPreviews(newPreviews);
+                        }}
+                        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    <span className="text-xs text-gray-400 mt-1">เพิ่ม</span>
+                    <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
 
-        {currentTab === 'passport' && (
-          <PassportView
-            pets={pets}
-            selectedPetId={selectedPetId}
-            onSelectPet={setSelectedPetId}
-            certificates={certificates}
-            events={events}
-            currentUser={user}
-            userRole={userRole}
-            onAddNewPet={() => setIsAddPetModalOpen(true)}
-            onUpdatePet={handleUpdatePet}
-            onOpenNewCert={(petId) => {
-              setCertTargetPetId(petId);
-              setIsNewCertModalOpen(true);
-            }}
-            onViewCert={(cert) => setViewingCert(cert)}
-            onOpenNewPost={() => setIsNewPostModalOpen(true)}
-          />
-        )
-	}
+          {/* Step 2: แท็กสมาชิก */}
+          {step === "tag" && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">เลือกทุกคน (และน้องแมว!) ที่อยู่ในโมเมนต์นี้</p>
+              <div className="grid grid-cols-2 gap-3">
+                {members.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => toggleMemberTag(member.id)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      selectedMembers.includes(member.id)
+                        ? "border-orange-500 bg-orange-50 ring-1 ring-orange-500"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                      member.role === 'pet' ? 'bg-blue-100' : 'bg-green-100'
+                    }`}>
+                      {member.avatar ? (
+                        <Image src={member.avatar} alt={member.name} width={40} height={40} className="rounded-full object-cover" />
+                      ) : (
+                        member.name.charAt(0)
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-800">{member.name}</p>
+                      <p className="text-xs text-gray-500">{member.role === 'pet' ? '🐱 แมว' : '👤 คน'}</p>
+                    </div>
+                    {selectedMembers.includes(member.id) && (
+                      <div className="ml-auto text-orange-500">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+           {/* Step 3: Review (Optional - ข้ามได้ถ้าอยากเร็ว) */}
+           {step === "review" && (
+             <div className="text-center py-8">
+               <p className="text-gray-600">พร้อมบันทึกเรื่องราวนี้แล้ว!</p>
+               {story && <p className="mt-2 text-sm italic text-gray-500">"{story}"</p>}
+               {selectedMembers.length > 0 && <p className="mt-2 text-sm text-gray-500">ร่วมกับ {selectedMembers.length} สมาชิก</p>}
+             </div>
+           )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 border-t bg-gray-50 flex justify-between">
+          {step !== "write" ? (
+            <button 
+              onClick={() => setStep(step === "tag" ? "write" : "tag")}
+              className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              ย้อนกลับ
+            </button>
+          ) : (
+            <div></div> // Spacer
+          )}
+          
+          {step === "tag" ? (
+            <button 
+              onClick={handleSubmit}
+              disabled={isSubmitting || (selectedMembers.length === 0 && !story)}
+              className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSubmitting ? "กำลังบันทึก..." : "บันทึกความทรงจำ"}
+            </button>
+          ) : (
+            <button 
+              onClick={() => setStep(step === "write" ? "tag" : "review")}
+              disabled={step === "write" && !story && mediaFiles.length === 0}
+              className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
+            >
+              ต่อไป
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
