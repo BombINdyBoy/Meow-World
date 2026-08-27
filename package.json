@@ -11,12 +11,9 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
-<<<<<<< HEAD
     "date-fns": "^4.4.0",
-=======
     "@types/qrcode": "^1.5.6",
     "lucide-react": "^1.34.0",
->>>>>>> 27e7639dd49d8f89e77ea5c3243943838f267b30
     "next": "16.3.3",
     "qrcode": "^1.5.4",
     "react": "19.2.8",
