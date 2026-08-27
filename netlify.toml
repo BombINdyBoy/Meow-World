@@ -1,0 +1,31 @@
+[build]
+  command = "next build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Next.js 16 uses the OpenNext adapter automatically via Netlify plugin
+# No need to specify functions directory — Netlify auto-detects
+
+# SPA fallback for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+# Force HTTPS
+[[redirects]]
+  from = "http://*:12345/*"
+  to = "https://:12345/:splat"
+  status = 301
+  force = true
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
