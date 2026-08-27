@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
@@ -49,4 +50,29 @@ export async function GET(request: NextRequest) {
     console.error('Auth callback error:', error)
     redirect('/login?error=Unexpected error occurred')
   }
+=======
+﻿import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
+
+export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const origin = requestUrl.origin;
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (!error) {
+      // ส่งกลับไปหน้า Home หลังจาก Login สำเร็จ
+      return NextResponse.redirect(`${origin}/`);
+    } else {
+      console.error("Auth exchange error:", error);
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+    }
+  }
+
+  // ไม่มี code ให้กลับหน้า login
+  return NextResponse.redirect(`${origin}/login`);
+>>>>>>> 27e7639dd49d8f89e77ea5c3243943838f267b30
 }
