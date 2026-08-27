@@ -71,11 +71,7 @@ export default function Home() {
           displayName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'คุณผู้ดูแล',
           avatarUrl: data.user.user_metadata?.avatar_url,
         });
-      }
-    });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
         setUser({
           id: session.user.id,
           email: session.user.email,
@@ -92,7 +88,8 @@ export default function Home() {
 
   // Load Real Supabase Data if logged in and configured
   const loadSupabaseData = useCallback(async () => {
-    if (!user || isDemoMode || !supabase) return;
+    if (!user || isDemoMode || !supabase) return; 
+	
 
     try {
       const [petsRes, eventsRes, familiesRes, membersRes, certsRes] = await Promise.all([
@@ -133,6 +130,13 @@ export default function Home() {
     }
   }, [user, isDemoMode, loadSupabaseData]);
 
+  const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+      setIsDemoMode(false);
+      setUser(null);
+    }
+	
   // Auth Handlers
   const handleAuthenticate = async (
     email: string,
@@ -162,7 +166,7 @@ export default function Home() {
       if (error) return error.message;
     }
     return null;
-  };
+ 
 
   const handleLoginDemo = () => {
     setIsDemoMode(true);

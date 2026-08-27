@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-'use client'
+﻿'use client'
 
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -131,7 +130,6 @@ export default function LoginPage() {
       </div>
     </div>
   )
-=======
 ﻿"use client";
 
 import { createClient } from "@/utils/supabase/client";
@@ -199,5 +197,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
->>>>>>> 27e7639dd49d8f89e77ea5c3243943838f267b30
 }

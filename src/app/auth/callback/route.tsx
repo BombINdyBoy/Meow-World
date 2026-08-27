@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
@@ -50,7 +49,6 @@ export async function GET(request: NextRequest) {
     console.error('Auth callback error:', error)
     redirect('/login?error=Unexpected error occurred')
   }
-=======
 ﻿import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -74,5 +72,4 @@ export async function GET(request: Request) {
 
   // ไม่มี code ให้กลับหน้า login
   return NextResponse.redirect(`${origin}/login`);
->>>>>>> 27e7639dd49d8f89e77ea5c3243943838f267b30
 }
