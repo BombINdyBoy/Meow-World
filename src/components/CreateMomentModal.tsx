@@ -9,9 +9,10 @@ interface CreateMomentModalProps {
   onClose: () => void;
   homeId: string; // ID ของบ้านปัจจุบัน
   userId: string; // ID ของผู้ใช้ที่ล็อกอิน
+  onCreated?: () => void; // Callback เมื่อบันทึกสำเร็จ
 }
 
-export default function CreateMomentModal({ isOpen, onClose, homeId, userId }: CreateMomentModalProps) {
+export default function CreateMomentModal({ isOpen, onClose, homeId, userId, onCreated }: CreateMomentModalProps) {
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
@@ -33,11 +34,13 @@ export default function CreateMomentModal({ isOpen, onClose, homeId, userId }: C
         participant_ids: [userId], // แท็กตัวเองเป็นผู้ร่วมเหตุการณ์
       });
 
-      if (error) throw error;
-
-      // สำเร็จ! ปิด Modal และรีเฟรชหน้า
-      onClose();
-      router.refresh(); 
+      if (error) throw error;      // สำเร็จ! ปิด Modal และรีเฟรชหน้า
+      if (onCreated) {
+        onCreated();
+      } else {
+        onClose();
+        router.refresh();
+      } 
     } catch (err) {
       console.error("Error saving moment:", err);
       alert("เกิดข้อผิดพลาดเล็กน้อย กรุณาลองใหม่อีกครั้งนะ");

@@ -65,11 +65,12 @@ export default function HomePage() {
         let currentRole: UserRole = 'viewer';
 
         if (memberData && memberData.homes) {
+          const homesData = memberData.homes as any;
           // กรณีที่ 1: มีบ้านอยู่แล้ว
           currentFamily = {
-            id: memberData.homes.id,
-            name: memberData.homes.name,
-            owner_id: memberData.homes.owner_id,
+            id: homesData.id,
+            name: homesData.name,
+            owner_id: homesData.owner_id,
             created_at: new Date().toISOString(),
           };
           currentRole = memberData.role as UserRole;
@@ -406,15 +407,19 @@ export default function HomePage() {
             onClose={() => setIsMembersModalOpen(false)}
             family={family}
             members={members}
-            currentUser={currentUser}
-            userRole={userRole}
+            currentUserId={currentUser.id}
+            onUpdateRole={() => {}}
+            onRemoveMember={() => {}}
+            onAddMemberDirectly={() => {}}
+            onOpenQRInvite={() => setIsQRModalOpen(true)}
           />
           
           <QRInviteModal
             isOpen={isQRModalOpen}
             onClose={() => setIsQRModalOpen(false)}
             family={family}
-            createdBy={currentUser}
+            currentUserName={currentUser.displayName}
+            onJoinWithToken={() => true}
           />
         </>
       )}
