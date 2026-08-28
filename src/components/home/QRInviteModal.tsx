@@ -45,11 +45,10 @@ export const QRInviteModal: React.FC<QRInviteModalProps> = ({
   // จำลอง Token (ในของจริงต้องเรียก API สร้าง)
   const [inviteToken] = useState<string>(() => `MW-${Math.random().toString(36).substring(2, 8).toUpperCase()}`);
 
-  useEffect(() => {
-    if (isOpen && activeTab === 'create') {
-      // จำลองการสร้าง QR Code (ในของจริงใช้ generateQRCodeDataUrl)
-      // const data = JSON.stringify({ familyId: family.id, token: inviteToken, role });
-      // setQrCodeDataUrl(generateQRCodeDataUrl(data)); 
-      
-      // ใช้ Placeholder ชั่วคราว
-      setQrCodeDataUrl(`https://api.qrserver.com/v1/create-qr-code/?
+useEffect(() => {
+  if (isOpen && activeTab === 'create') {
+    // จำลองการสร้าง QR Code (ในของจริงใช้ generateQRCodeDataUrl)
+    const token = JSON.stringify({ familyId: family.id, token: inviteToken, role });
+       setQrCodeDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(token)}`);
+  }
+}, [isOpen, activeTab, family.id, inviteToken, role]);
