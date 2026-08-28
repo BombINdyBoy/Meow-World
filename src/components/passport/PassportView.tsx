@@ -10,7 +10,7 @@ import {
   Syringe,
 } from 'lucide-react';
 import { DigitalCertificate, JourneyEvent, Pet, UserProfile, UserRole } from '@/types';
-import { calculateAge, getCertTypeLabel } from '@/utils/certGenerator';
+import { calculateAge, getCertTypeLabel, generateCertNumber } from '@/utils/certGenerator';
 import { CertificateCard } from '../certificate/CertificateCard';
 
 interface PassportViewProps {
@@ -151,6 +151,14 @@ export const PassportView: React.FC<PassportViewProps> = ({
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/10 text-white/80 border border-white/10">
                   สิทธิ์: {userRole === 'owner' ? 'เจ้าของ (Owner)' : userRole === 'editor' ? 'ผู้ดูแล (Editor)' : 'ผู้เข้าชม (Viewer)'}
+                </span>
+              </div>
+
+              {/* Unique Passport ID */}
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-[10px] font-mono text-[#BDB7AE]">Passport ID:</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#E8D28A]/10 text-[#E8D28A] border border-[#E8D28A]/30">
+                  MW-PET-{new Date(activePet.created_at).getFullYear()}-{activePet.id.slice(0, 8).toUpperCase()}
                 </span>
               </div>
 

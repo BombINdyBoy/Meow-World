@@ -1,16 +1,19 @@
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(searchParams.get("error"));
   const supabase = createClient();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -19,9 +22,9 @@ export default function LoginPage() {
         },
       });
       if (error) throw error;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error);
-      alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setError(error.message || "เกิดข้อผิดพลาด กรุณาลองใหม่");
       setIsLoading(false);
     }
   };
@@ -34,6 +37,14 @@ export default function LoginPage() {
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Meow World</h1>
         <p className="text-gray-600">เข้าสู่ระบบเพื่อดูแลสัตว์เลี้ยงของคุณ</p>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <p className="font-medium">⚠️ {error}</p>
+            <p className="mt-1 text-xs text-red-500">ตรวจสอบ Google Cloud Console redirect URI อีกครั้ง</p>
+          </div>
+        )}
         
         <button
           onClick={handleGoogleLogin}
@@ -49,7 +60,19 @@ export default function LoginPage() {
             </>
           )}
         </button>
+
+        <p className="text-xs text-gray-400 mt-4">
+          ทดสอบ OAuth: ตรวจสอบ redirect URI ใน Google Cloud Console ให้ตรงกับ Supabase callback URL
+        </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

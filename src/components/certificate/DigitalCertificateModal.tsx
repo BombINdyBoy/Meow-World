@@ -18,6 +18,7 @@ import {
   generateQRCodeDataUrl,
   getCertTypeLabel,
 } from '@/utils/certGenerator';
+import { getCertTemplate } from '@/utils/certTemplates';
 
 interface DigitalCertificateModalProps {
   isOpen: boolean;
@@ -129,25 +130,26 @@ export const DigitalCertificateModal: React.FC<DigitalCertificateModalProps> = (
   };
 
   const certTypeInfo = getCertTypeLabel(certType);
+  const template = getCertTemplate(certType);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 modal-backdrop">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-[#E8E2D9] overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]" style={{ border: `2px solid ${template.borderColor}` }}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E8E2D9] flex items-center justify-between bg-[#FAF7F2]">
+        <div className="px-6 py-4 border-b flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${template.gradientFrom}, ${template.gradientTo})`, borderColor: `${template.borderColor}60` }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B89320] text-white flex items-center justify-center shadow-md">
-              <Award className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl text-white flex items-center justify-center shadow-md text-lg" style={{ background: `linear-gradient(135deg, ${template.primaryColor}, ${template.accentColor})` }}>
+              {template.icon}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-serif font-bold text-lg text-[#1F1E1D]">Meow World Digital Certificate</h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FCF8EE] text-[#C89933] border border-[#C89933]/30">
+                <h3 className="font-serif font-bold text-lg" style={{ color: template.accentColor }}>Meow World Digital Certificate</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: template.secondaryColor, color: template.accentColor, border: `1px solid ${template.borderColor}50` }}>
                   Official Layer
                 </span>
               </div>
               <p className="text-xs text-[#8C867E]">
-                แปลงเอกสารจริงเป็นใบรับรองดิจิทัล พร้อมกรอบทอง ลายน้ำ และ QR Code ตรวจสอบ
+                แปลงเอกสารจริงเป็นใบรับรองดิจิทัล พร้อมกรอบ ลายน้ำ และ QR Code ตรวจสอบ
               </p>
             </div>
           </div>

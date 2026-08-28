@@ -6,14 +6,23 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const error = requestUrl.searchParams.get('error')
+  const errorDescription = requestUrl.searchParams.get('error_description')
+
+  console.log('[Auth Callback] Received:', {
+    hasCode: !!code,
+    error,
+    errorDescription,
+    url: requestUrl.toString()
+  })
 
   // If there's an error parameter from OAuth, redirect to login with error
   if (error) {
-    console.error('OAuth error:', error)
-    redirect(`/login?error=${encodeURIComponent('Authentication failed: ' + error)}`)
+    console.error('[Auth Callback] OAuth error:', error, errorDescription)
+    redirect(`/login?error=${encodeURIComponent(errorDescription || error)}`)
   }
 
   if (!code) {
+    console.error('[Auth Callback] No code provided')
     redirect('/login?error=No authentication code provided')
   }
 
@@ -24,29 +33,31 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (authError || !user) {
-      console.error('Auth exchange error:', authError)
-      redirect('/login?error=Authentication failed')
+      console.error('[Auth Callback] Auth exchange error:', authError)
+      redirect(`/login?error=${encodeURIComponent(authError?.message || 'Authentication failed')}`)
     }
+
+    console.log('[Auth Callback] Success! User:', user?.id)
 
     // Check if profile exists, if not create one
     const { data: profile } = await supabase
       .from('profiles')
       .select('id')
-      .eq('id', user.id)
+      .eq('id', user!.id)
       .single()
 
     if (!profile) {
       // Create profile for new user
       await supabase.from('profiles').insert({
-        id: user.id,
-        display_name: user.email?.split('@')[0] || user.email,
+        id: user!.id,
+        display_name: user!.email?.split('@')[0] || user!.email,
       })
     }
 
     // Redirect to home page after successful authentication
     redirect('/')
   } catch (error) {
-    console.error('Auth callback error:', error)
+    console.error('[Auth Callback] Unexpected error:', error)
     redirect('/login?error=Unexpected error occurred')
   }
 }
