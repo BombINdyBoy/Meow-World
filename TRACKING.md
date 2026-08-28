@@ -1,6 +1,6 @@
 # Meow World V4.1 Heart Edition Tracking
 
-**Updated:** 2026-08-26  
+**Updated:** 2026-08-28  
 **Scope:** Roadmap 1 - Passport + Life Journey, Home, Shared Home, and Family
 
 ## Current Status

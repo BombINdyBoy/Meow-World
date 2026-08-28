@@ -434,6 +434,7 @@ export default function HomePage() {
             family={family}
             members={members}
             currentUser={session.user}
+            userRole={userRole}
             onUpdateRole={() => {}}
             onRemoveMember={() => {}}
             onAddMemberDirectly={() => {}}
@@ -444,6 +445,7 @@ export default function HomePage() {
             isOpen={isQRModalOpen}
             onClose={() => setIsQRModalOpen(false)}
             family={family}
+            createdBy={currentUser}
             currentUserName={currentUser.displayName}
             onJoinWithToken={() => true}
           />
