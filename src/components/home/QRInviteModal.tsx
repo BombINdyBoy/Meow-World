@@ -10,6 +10,7 @@ interface QRInviteModalProps {
   onClose: () => void;
   family: Family;
   createdBy: UserProfile;
+  currentUserName: string;
 }
 
 export const QRInviteModal: React.FC<QRInviteModalProps> = ({
@@ -17,6 +18,7 @@ export const QRInviteModal: React.FC<QRInviteModalProps> = ({
   onClose,
   family,
   createdBy,
+  currentUserName,
 }) => {
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [role, setRole] = useState<UserRole>('editor');
