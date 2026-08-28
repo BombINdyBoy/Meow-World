@@ -55,22 +55,22 @@ export default function HomePage() {
         setCurrentUser(userProfile);
 
         // ค้นหาบ้าน/ครอบครัว ของผู้ใช้
-        const { data: memberData } = await supabase
+        const { data: memberData, error: memberError } = await supabase
           .from("home_members")
-          .select("homes(id, name, owner_id), role")
+          .select("home_id, role, homes!inner(id, name, owner_id)")
           .eq("user_id", session.user.id)
           .single();
 
         let currentFamily: Family | null = null;
         let currentRole: UserRole = 'viewer';
 
-        if (memberData && memberData.homes) {
-          const homesData = memberData.homes as any;
+        if (!memberError && memberData && (memberData.homes as any)) {
+          const homeData = memberData.homes as any;
           // กรณีที่ 1: มีบ้านอยู่แล้ว
           currentFamily = {
-            id: homesData.id,
-            name: homesData.name,
-            owner_id: homesData.owner_id,
+            id: homeData.id,
+            name: homeData.name,
+            owner_id: homeData.owner_id,
             created_at: new Date().toISOString(),
           };
           currentRole = memberData.role as UserRole;

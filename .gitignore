@@ -1,13 +1,42 @@
 ```
+# Next.js
+.next/
+out/
+
 # Dependencies
 node_modules/
-.julia/
-zig-cache/
 
-# Build artifacts
+# Environment variables
+.env.local
+.env
+.env.*
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+.nyc_output/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
 dist/
 build/
 target/
+bin/
+lib/
+tmp/
+temp/
 
 # Python
 __pycache__/
@@ -18,48 +47,41 @@ __pycache__/
 env/
 venv/
 .venv/
-.ENV
-.pip-tools/
-.pytest_cache/
-.mypy_cache/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
 .coverage
-htmlcov/
-
-# Logs
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
 *.log
+.gitattributes
 
-# Environment variables
-.env
-.env.local
-.env.*
-!.env.example
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Netlify
-.netlify/
-
-# Coverage
-coverage/
+# Compiled and binary files
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.dylib
+*.exe
+*.out
+*.class
 
 # Compressed files
 *.zip
-*.gz
+*.tar.gz
 *.tar
-*.tgz
+*.gz
+*.rar
+*.7z
 *.bz2
 *.xz
-*.7z
-*.rar
+*.tgz
+*.tbz2
 *.zst
 *.lz4
 *.lzh
@@ -70,8 +92,319 @@ coverage/
 *.Z
 *.lz
 *.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+
+# Cache
+.cache/
+*.cache
+.npm
+.yarn-cache
+.bower-cache
+.jspm-cache
+.turbo/
+.vercel/
+.netlify/
+
+# Database
+*.db
+*.db-journal
+
+# Testing
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+*.test.jsx
+*.spec.jsx
+*.test.tsx
+*.spec.tsx
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Sensitive
+config/secrets.yml
+*.key
+*.pem
+*.crt
+*.cert
+*.p12
+*.pfx
+*.p7b
+*.p7c
+*.csr
+
+# Browsers
+*.html.gz
+*.br
+
+# Serverless
+.serverless/
+
+# Docker
+.dockerignore
+
+# Mobile
+*.ipa
+*.apk
+*.aab
+*.appx
+
+# Documentation
+docs/_build/
+*.rst~
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ruby
+*.gem
+*.rbc
+.bundle/
+config.ru~
+.rake_tasks
+~$*.rb
+Gemfile.lock
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+hs_err_pid*
+replay_pid*
+
+# C#
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+mono_crash.*
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Rust
+*.o
+*.a
+*.rlib
+*.so
+*.dylib
+*.dSYM
+Cargo.lock
+
+# PHP
+*.phar
+
+# Perl
+*.al
+*.prelink
+*.bs
+
+# Lua
+*.out
+
+# MATLAB
+*.fig
+*.mat
+*.mex*
+*.mx3
+*.prj
+
+# Objective-C
+*.dSYM/
+*.dSYM.zip
+
+# Swift
+*.xcodeproj/
+*.xcworkspace/
+*.swiftpm/
+
+# C++
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.ilk
+*.pdb
+*.iobj
+*.ipdb
+*.tlog
+*.exp
+*.lib
+*.obj
+
+# Qt
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+*.moc.cpp
+*.qm
+*.prl
+*.pri
+
+# Autotools
+aclocal.m4
+autom4te.cache/
+compile
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+ltmain.sh
+Makefile
+Makefile.in
+missing
+stamp-h1
+.libs/
+.libs
+
+# Android
+*.keystore
+*.jks
+*.ap_
+build/
+.gradle/
+local.properties
+captures/
+
+# Gradle
+.gradle/
+build/
+
+# Maven
+target/
+!pom.xml.tag
+!pom.xml.releaseBackup
+!pom.xml.versionsBackup
+!pom.xml.next
+*.tmproj
+nb-configuration.xml
+
+# Eclipse
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+.gradle/
+.checkstyle
+.problems
+.pydevproject
+.idea/
+*.launch
+.classpath
+.project
+.factorypath
+.content
+.cdtproject
+.cproject
+.jsdtscope
+.springBeans
+.netbeans/
+nbproject/
+nbbuild/
+dist/
+build/
+nbdist/
+.nb-gradle/
+
+# IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Visual Studio
+*.VC.db
+*.VC.VC.opendb
+*.user
+*.userosscache
+*.suo
+*.csproj.user
+*.opensdf
+*.sdf
+*.cachefile
+*.VCXPROJ.filters
+*.vcxproj
+*.vcxproj.filters
+*.vcproj
+*.vcproj.filters
+*.vcproj.user
+*.vcxproj.user
+*.vcxproj.userosscache
+*.vcxproj.userprefs
+*.userprefs
+*.sln.docstates
+*.userprefs
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.VC.db
+*.VC.VC.opendb
+
+# Visual Studio Code
+.vscode/
+
+# WebStorm
+.idea/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*~
+.swm
+.netrwhist
+NERD_tree_*
+.tags*
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+# End of https://www.gitignore.io/api/all
 ```
