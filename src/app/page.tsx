@@ -433,7 +433,7 @@ export default function HomePage() {
             onClose={() => setIsMembersModalOpen(false)}
             family={family}
             members={members}
-            currentUserId={currentUser.id}
+            currentUser={session.user}
             onUpdateRole={() => {}}
             onRemoveMember={() => {}}
             onAddMemberDirectly={() => {}}
