@@ -130,3 +130,28 @@ export interface InviteToken {
   expires_at: string;
   is_used: boolean;
 }
+
+// ─── Real-time Notifications ───────────────────────────────────
+
+export type NotificationType =
+  | 'new_event'          // มีคนสร้าง Moment ใหม่
+  | 'new_comment'        // มีคน comment ใน Moment
+  | 'new_like'           // มีคนกดไลก์ Moment
+  | 'new_member'         // มีสมาชิกใหม่เข้าบ้าน
+  | 'pet_added'          // มีสัตว์เลี้ยงใหม่ถูกเพิ่ม
+  | 'certificate_issued'; // ออกใบรับรองดิจิทัลใหม่
+
+export interface Notification {
+  id: string;
+  user_id: string;         // ผู้รับ
+  family_id: string;       // บ้านที่เกี่ยวข้อง
+  type: NotificationType;
+  title: string;           // หัวข้อ notification
+  message: string;         // รายละเอียด
+  actor_name: string;      // ชื่อผู้กระทำ
+  actor_avatar?: string;   // รูปโปรไฟล์ผู้กระทำ
+  ref_id?: string;         // ID ของ event/pet/comment ที่เกี่ยวข้อง
+  ref_type?: string;       // 'event' | 'pet' | 'comment' | 'member'
+  is_read: boolean;
+  created_at: string;
+}

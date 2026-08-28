@@ -7,6 +7,8 @@ import { Family, FamilyMember, JourneyEvent, Pet, UserProfile, UserRole } from "
 import { HomeMode } from "@/components/home/HomeMode";
 import { FamilyMembersModal } from "@/components/home/FamilyMembersModal";
 import { QRInviteModal } from "@/components/home/QRInviteModal";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export default function HomePage() {
   const router = useRouter();
@@ -32,6 +34,19 @@ export default function HomePage() {
   
   // UI State for Empty/Living Mode (Psychological States)
   const [viewState, setViewState] = useState<'loading' | 'nesting' | 'living'>('loading');
+
+  // Real-time Notifications
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+    clearAll,
+  } = useRealtimeNotifications({
+    userId: currentUser?.id || '',
+    familyId: family?.id || '',
+  });
 
   // 1. Initialize Home Experience on Mount
   useEffect(() => {
@@ -371,8 +386,19 @@ export default function HomePage() {
             <h1 className="text-2xl font-serif font-bold text-[#1F1E1D]">{family.name}</h1>
             <p className="text-sm text-[#59554F]">พื้นที่ความทรงจำร่วมกัน • {members.length} สมาชิก • {pets.length} น้องแมว</p>
           </div>
-          <div className="w-12 h-12 bg-gradient-to-br from-[#6B8E68] to-[#4F6D4C] rounded-full flex items-center justify-center text-2xl border-2 border-white shadow-md">
-            🏠
+          <div className="flex items-center gap-3">
+            {/* Real-time Notification Bell */}
+            <NotificationBell
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              onClearNotification={clearNotification}
+              onClearAll={clearAll}
+            />
+            <div className="w-12 h-12 bg-gradient-to-br from-[#6B8E68] to-[#4F6D4C] rounded-full flex items-center justify-center text-2xl border-2 border-white shadow-md">
+              🏠
+            </div>
           </div>
         </div>
       </header>
