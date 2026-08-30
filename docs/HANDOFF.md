@@ -379,6 +379,147 @@ Login → เลือกบ้าน
 
 ---
 
+## 🏗️ Meow World Architecture: "ขยายได้โดยไม่ต้องรื้อ"
+
+### แผนผังโครงสร้างทั้งหมด
+
+```
+Meow Town (อนาคต)
+├── 🏘️ Community (กลุ่มผู้เลี้ยง)
+│   ├── Vet Market (ตลาดสัตวแพทย์)
+│   ├── Pet Profiles (โปรไฟล์สาธารณะ)
+│   └── Events (กิจกรรม)
+│
+├── 🏠 Home (บ้านหลัก — ทุกบ้านมีเหมือนกัน)
+│   │
+│   ├── 🪺 Nest 1 (รังส่วนตัว — สำหรับลูกสาว)
+│   │   ├── 🐈 arthur (สัตว์เลี้ยง)
+│   │   ├── 📸 Memories (ความทรงจำ)
+│   │   ├── 📚 Storage (ตู้เก็บบันทึก)
+│   │   └── 🎨 Decoration (ตกแต่ง)
+│   │
+│   ├── 🪺 Nest 2 (รังส่วนตัว — สำหรับลูกชาย)
+│   │   ├── 🐕小康 (สัตว์เลี้ยง)
+│   │   ├── 📸 Memories
+│   │   ├── 📚 Storage
+│   │   └── 🎨 Decoration
+│   │
+│   ├── 🏡 Yard (พื้นที่ส่วนกลางของบ้าน)
+│   │   ├── 🌳 ต้นไม้
+│   │   ├── 🪑 ม้านั่ง
+│   │   ├── 🐟 บ่อปลา
+│   │   └── 🌸 สวนดอกไม้
+│   │
+│   └── 💾 Shared Storage (พื้นที่จัดเก็บร่วม)
+│
+└── 🏪 Vet Market (อนาคต — หลังเป็นที่รู้จัก)
+```
+
+### แผนภาพ SQL Schema ที่รองรับการขยาย
+
+```sql
+-- บ้านหลัก (ทุกบ้านมีเหมือนกัน)
+CREATE TABLE public.homes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  description text,
+  owner_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  -- Extension fields (พร้อมใช้เมื่อพร้อม)
+  theme text DEFAULT 'default',
+  banner_url text,
+  created_at timestamptz DEFAULT NOW()
+);
+
+-- รังส่วนตัว (Nest) — ย่อยจาก homes
+CREATE TABLE public.nests (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  home_id uuid REFERENCES public.homes(id) ON DELETE CASCADE,
+  owner_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  nest_name text NOT NULL,
+  description text,
+  theme text DEFAULT 'default',
+  banner_url text,
+  created_at timestamptz DEFAULT NOW()
+);
+
+-- ของตกแต่ง (สำหรับรังและบ้าน)
+CREATE TABLE public.decorations (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  nest_id uuid REFERENCES public.nests(id) ON DELETE CASCADE,
+  home_id uuid REFERENCES public.homes(id) ON DELETE CASCADE,
+  decoration_type text NOT NULL, -- tree, bench, pond, flower, etc.
+  position_x int DEFAULT 0,
+  position_y int DEFAULT 0,
+  season text, -- null = ใช้ตลอด, 'christmas', 'halloween', etc.
+  created_at timestamptz DEFAULT NOW()
+);
+
+-- พื้นที่จัดเก็บ (Family Package)
+CREATE TABLE public.family_packages (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  family_id uuid REFERENCES public.homes(id) ON DELETE CASCADE,
+  storage_limit bigint DEFAULT 5368709120, -- 5GB
+  storage_used bigint DEFAULT 0,
+  plan_type text DEFAULT 'free',
+  created_at timestamptz DEFAULT NOW(),
+  expires_at timestamptz
+);
+```
+
+### Flow การทำงาน
+
+```
+ขั้นที่ 1: สร้างบ้านหลัก (อัตโนมัติเมื่อ signup)
+    │
+    ▼
+ขั้นที่ 2: เพิ่มรังส่วนตัว (แต่ละคนสร้างของตัวเอง)
+    │
+    ├── 👧 ลูกสาว → สร้างรังสำหรับ arthur
+    ├── 👦 ลูกชาย → สร้างรังสำหรับ小康
+    └── 👨 พ่อ → ซื้อของตกแต่งให้ลูกๆ
+    │
+    ▼
+ขั้นที่ 3: ตกแต่งบ้าน (ปกติ + เทศกาล)
+    │
+    ├── 🌳 ต้นไม้ (ปกติ)
+    ├── 🪑 ม้านั่ง (ปกติ)
+    ├── 🐟 บ่อปลา (ปกติ)
+    ├── 🎃 ฮาโลวีน (เฉพาะเดือนตุลาคม)
+    └── 🎄 คริสต์มาส (เฉพาะเดือนธันวาคม)
+    │
+    ▼
+ขั้นที่ 4: ขยายไป Community (อนาคต)
+    │
+    └── Meow Town → Vet Market
+```
+
+### หลักการออกแบบ: ขยายได้โดยไม่ต้องรื้อ
+
+| หลัก | วิธีทำ |
+|---|---| 
+| **Schema พร้อมใช้** | เพิ่ม column ได้โดยไม่ต้อง drop table |
+| **Decoration system** | เป็น table แยก ไม่ผูกกับ business logic |
+| **Season layer** | เพิ่ม season ได้โดยไม่ต้องแก้ code หลัก |
+| **Nest = ย่อยจาก Home** | ลบ nest ไม่กระทบ home |
+| **Storage = Family Package** | ขยาย plan ได้โดยไม่ต้อง migrate ใหม่ |
+
+### แผนภาพความสัมพันธ์
+
+```
+profiles
+  │
+  └── homes (บ้านหลัก)
+        ├── nests (รังส่วนตัว)
+        │     ├── pets (สัตว์เลี้ยง)
+        │     ├── life_journey_events
+        │     └── decorations (ของตกแต่ง)
+        ├── home_members (สมาชิก)
+        ├── family_packages (พื้นที่จัดเก็บ)
+        └── decorations (ของตกแต่งส่วนกลาง)
+```
+
+---
+
 ## 🏗️ Architecture
 
 ### Tech Stack
