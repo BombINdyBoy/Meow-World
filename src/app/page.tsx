@@ -3,465 +3,117 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { Family, FamilyMember, JourneyEvent, Pet, UserProfile, UserRole } from "@/types";
-import { HomeMode } from "@/components/home/HomeMode";
-import { FamilyMembersModal } from "@/components/home/FamilyMembersModal";
-import { QRInviteModal } from "@/components/home/QRInviteModal";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
+// import CreateMomentModal from "@/components/CreateMomentModal"; // ยังไม่ต้องใช้ตอนนี้
 
 export default function HomePage() {
   const router = useRouter();
-  // Core States - Meow World Home Foundation
-  const [session, setSession] = useState<any>(null);
+  const supabase = createClient();
+  
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Family & Home Data
-  const [family, setFamily] = useState<Family | null>(null);
-  const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [events, setEvents] = useState<JourneyEvent[]>([]);
-  
-  // Current User Context
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [userRole, setUserRole] = useState<UserRole>('viewer');
-  
-  // Modal States
-  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  
-  // UI State for Empty/Living Mode (Psychological States)
-  const [viewState, setViewState] = useState<'loading' | 'nesting' | 'living'>('loading');
+  const [hasPets, setHasPets] = useState(false);
+  const [homeName, setHomeName] = useState("บ้านของเรา");
 
-  // Real-time Notifications
-  const {
-    notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    clearNotification,
-    clearAll,
-  } = useRealtimeNotifications({
-    userId: currentUser?.id || '',
-    familyId: family?.id || '',
-  });
-
-  // 1. Initialize Home Experience on Mount
   useEffect(() => {
-    const supabase = createClient();
-    async function initHomeExperience() {
+    async function checkData() {
       try {
-        // ดึง Session ผู้ใช้ปัจจุบัน
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           router.push("/login");
           return;
         }
-        setSession(session);
 
-        // สร้าง UserProfile จาก Session
-        const userProfile: UserProfile = {
-          id: session.user.id,
-          email: session.user.email,
-          displayName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'เพื่อนแมว',
-          avatarUrl: session.user.user_metadata?.avatar_url,
-        };
-        setCurrentUser(userProfile);
-
-        // ค้นหาบ้าน/ครอบครัว ของผู้ใช้
-        const { data: memberData, error: memberError } = await supabase
+        // ตรวจสอบว่ามีสัตว์เลี้ยงหรือยัง
+        const { data: members } = await supabase
           .from("home_members")
-          .select("home_id, role, homes!inner(id, name, owner_id)")
+          .select("homes(id, name), pets(id)")
           .eq("user_id", session.user.id)
           .single();
 
-        let currentFamily: Family | null = null;
-        let currentRole: UserRole = 'viewer';
-
-        if (!memberError && memberData && (memberData.homes as any)) {
-          const homeData = memberData.homes as any;
-          // กรณีที่ 1: มีบ้านอยู่แล้ว
-          currentFamily = {
-            id: homeData.id,
-            name: homeData.name,
-            owner_id: homeData.owner_id,
-            created_at: new Date().toISOString(),
-          };
-          currentRole = memberData.role as UserRole;
-          setFamily(currentFamily);
-          setUserRole(currentRole);
-
-          // โหลดข้อมูลทั้งหมดแบบ Parallel
-          await Promise.all([
-            fetchMembers(currentFamily.id),
-            fetchPets(currentFamily.id),
-            fetchEvents(currentFamily.id),
-          ]);
-        } else {
-          // กรณีที่ 2: First Time User - สร้างบ้านอัตโนมัติ
-          const newFamily = await createHomeForUser(session.user);
-          currentFamily = newFamily;
-          currentRole = 'owner';
-          setFamily(newFamily);
-          setUserRole('owner');
+        if (members?.homes) {
+          setHomeName(members.homes.name);
+          // เช็คว่ามีpetsไหม (ในทางเทคนิคอาจต้อง query แยก แต่ตอนนี้สมมติว่ายังไม่มี)
+          setHasPets(!!members.pets && members.pets.length > 0);
         }
-
-        // กำหนด View State - หลัง fetch เสร็จ  events จะถูก update แล้ว
-        // ใช้ 'nesting' เป็นค่าเริ่มต้น แล้ว useEffect ข้างล่างจะเช็คอีกครั้ง
       } catch (error) {
-        console.error("Error initializing home experience:", error);
+        console.error(error);
       } finally {
         setIsLoading(false);
       }
     }
-
-    initHomeExperience();
+    checkData();
   }, []);
 
-  // Update viewState when events load (after async fetches complete)
-  useEffect(() => {
-    if (!isLoading && family) {
-      setViewState(events.length > 0 ? 'living' : 'nesting');
-    }
-  }, [events, family, isLoading]);
-
-  // สร้างบ้านใหม่สำหรับผู้ใช้แรก
-  async function createHomeForUser(user: any): Promise<Family> {
-    const supabase = createClient();
-    const homeName = "บ้านของเรา";
-    const displayName = user.user_metadata?.full_name || "เจ้าของบ้าน";
-
-    // อัปเดต Profile
-    await supabase.from("profiles").update({ display_name: displayName }).eq("id", user.id);
-
-    // สร้างบ้าน
-    const { data: newHome, error: homeError } = await supabase
-      .from("homes")
-      .insert({ name: homeName, owner_id: user.id })
-      .select()
-      .single();
-
-    if (homeError || !newHome) throw homeError;
-
-    // เพิ่มเจ้าของบ้านเป็นสมาชิก
-    await supabase.from("home_members").insert({
-      home_id: newHome.id,
-      user_id: user.id,
-      role: "owner",
-    });
-
-    return { 
-      id: newHome.id, 
-      name: newHome.name, 
-      owner_id: user.id,
-      created_at: new Date().toISOString()
-    };
-  }
-
-  // Fetch Members (Co-owners)
-  async function fetchMembers(homeId: string) {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("home_members")
-      .select("user_id, role, joined_at, profiles(display_name, avatar_url)")
-      .eq("home_id", homeId);
-
-    if (!error && data) {
-      const formattedMembers: FamilyMember[] = data.map((item: any) => ({
-        family_id: homeId,
-        user_id: item.user_id,
-        display_name: item.profiles?.display_name || 'สมาชิก',
-        email: '',
-        avatar_url: item.profiles?.avatar_url,
-        role: item.role as UserRole,
-        joined_at: item.joined_at,
-      }));
-      setMembers(formattedMembers);
-    }
-  }
-
-  // Fetch Pets in this Home
-  async function fetchPets(homeId: string) {
-    const supabase = createClient();
-    // TODO: ใช้ pet_shares table เพื่อหา pets ที่แชร์ในบ้านนี้
-    // ตอนนี้ดึง pets ทั้งหมดของผู้ใช้ที่เป็น owner หรือ editor
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("pets")
-      .select("*")
-      .eq("owner_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setPets(data as Pet[]);
-    }
-  }
-
-  // Fetch Life Journey Events
-  async function fetchEvents(homeId: string) {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("life_journey_events")
-      .select("*")
-      .eq("home_id", homeId)
-      .order("event_date", { ascending: false })
-      .limit(50);
-
-    if (!error && data) {
-      const formattedEvents: JourneyEvent[] = data.map((item: any) => ({
-        id: item.id,
-        pet_id: item.pet_id,
-        tagged_pet_ids: item.tagged_pet_ids || [],
-        tagged_user_ids: item.tagged_user_ids || [],
-        author_id: item.author_id,
-        author_name: item.author_name || 'สมาชิก',
-        event_date: item.event_date,
-        event_type: item.event_type,
-        title: item.title,
-        description: item.description,
-        image_url: item.image_url,
-        video_url: item.video_url,
-        certificate_id: item.certificate_id,
-        likes_count: item.likes_count || 0,
-        is_liked: false, // TODO: เช็คจาก user_likes
-        comments: [], // TODO: โหลด comments
-        location: item.location,
-        created_at: item.created_at,
-      }));
-      setEvents(formattedEvents);
-    }
-  }
-
-  // Handle Add New Event (Life Journey Post)
-  const handleAddEvent = async (eventData: {
-    pet_id?: string;
-    tagged_pet_ids?: string[];
-    tagged_user_ids?: string[];
-    event_date: string;
-    event_type: any;
-    title: string;
-    description: string;
-    image_url?: string;
-    video_url?: string;
-    location?: string;
-  }) => {
-    if (!family || !currentUser) return;
-
-    const supabase = createClient();
-    try {
-      const { data: newEvent, error } = await supabase
-        .from("life_journey_events")
-        .insert({
-          home_id: family.id,
-          pet_id: eventData.pet_id,
-          tagged_pet_ids: eventData.tagged_pet_ids,
-          tagged_user_ids: eventData.tagged_user_ids,
-          author_id: currentUser.id,
-          author_name: currentUser.displayName,
-          event_date: eventData.event_date,
-          event_type: eventData.event_type,
-          title: eventData.title,
-          description: eventData.description,
-          image_url: eventData.image_url,
-          video_url: eventData.video_url,
-          location: eventData.location,
-        })
-        .select()
-        .single();
-
-      if (!error && newEvent) {
-        // เพิ่ม event ใหม่ vàoด้านบนของ list
-        const formattedEvent: JourneyEvent = {
-          id: newEvent.id,
-          pet_id: newEvent.pet_id,
-          tagged_pet_ids: newEvent.tagged_pet_ids || [],
-          tagged_user_ids: newEvent.tagged_user_ids || [],
-          author_id: newEvent.author_id,
-          author_name: newEvent.author_name || currentUser.displayName,
-          event_date: newEvent.event_date,
-          event_type: newEvent.event_type,
-          title: newEvent.title,
-          description: newEvent.description,
-          image_url: newEvent.image_url,
-          video_url: newEvent.video_url,
-          certificate_id: newEvent.certificate_id,
-          likes_count: 0,
-          is_liked: false,
-          comments: [],
-          location: newEvent.location,
-          created_at: newEvent.created_at,
-        };
-        setEvents([formattedEvent, ...events]);
-        setViewState('living');
-      }
-    } catch (error) {
-      console.error("Error adding event:", error);
-    }
-  };
-
-  // Handle Toggle Like
-  const handleToggleLike = async (eventId: string) => {
-    // TODO: Implement like/unlike logic with Supabase
-    setEvents(events.map(evt => 
-      evt.id === eventId 
-        ? { ...evt, is_liked: !evt.is_liked, likes_count: (evt.likes_count || 0) + (evt.is_liked ? -1 : 1) }
-        : evt
-    ));
-  };
-
-  // Handle Add Comment
-  const handleAddComment = async (eventId: string, commentText: string) => {
-    // TODO: Implement comment logic with Supabase
-    console.log(`Comment on ${eventId}: ${commentText}`);
-  };
-
-  // Handle Delete Event
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('คุณต้องการลบเรื่องราวนี้หรือไม่?')) return;
-    
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("life_journey_events")
-      .delete()
-      .eq("id", eventId);
-
-    if (!error) {
-      setEvents(events.filter(evt => evt.id !== eventId));
-    }
-  };
-
-  // Handle Navigate to Pet Detail
-  const handleSelectPet = (petId: string) => {
-    router.push(`/pets/${petId}`);
-  };
-
-  // Handle Add New Pet
-  const handleAddNewPet = () => {
-    router.push('/pets?page=create');
-  };
-
-  // Loading State - Psychological Warm Welcome
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2]">
-        <div className="text-center animate-fade-in">
-          <div className="text-6xl mb-4 animate-bounce">🏠</div>
-          <p className="text-[#59554F] font-medium">กำลังเปิดประตูบ้าน...</p>
-          <p className="text-xs text-[#8C867E] mt-2">Meow World กำลังเตรียมพื้นที่ความทรงจำของคุณ</p>
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
+        <div className="text-center animate-pulse">
+          <div className="text-4xl mb-2">🐱</div>
+          <p className="text-gray-500">กำลังเปิดประตูบ้าน...</p>
         </div>
       </div>
     );
   }
 
-  // Nesting State - Empty Home, Waiting for Stories
-  if (viewState === 'nesting' || !family) {
-    return (
-      <div className="min-h-screen bg-[#FAF7F2] pb-24">
-        <header className="px-6 pt-12 pb-6 bg-white shadow-sm">
-          <h1 className="text-2xl font-serif font-bold text-[#1F1E1D]">บ้านของเรา</h1>
-          <p className="text-sm text-[#59554F]">พื้นที่ความทรงจำร่วมกัน</p>
-        </header>
-
-        <main className="px-4 mt-8">
-          <div className="max-w-md mx-auto text-center py-20 space-y-6">
-            <div className="w-24 h-24 rounded-full bg-[#EBF1E8] flex items-center justify-center text-5xl mx-auto mb-4">
-              📦
-            </div>
-            <h2 className="text-xl font-serif font-bold text-[#1F1E1D]">
-              บ้านพร้อมแล้ว... ขาดแค่เรื่องราว!
-            </h2>
-            <p className="text-[#59554F] text-sm leading-relaxed">
-              มาบันทึกโมเมนต์แรกของน้องกันเถอะ ไม่ว่าจะเป็นวันแรกที่พบกัน 
-              ฉีดวัคซีนครั้งแรก หรือภาพถ่ายน่ารักๆ
-            </p>
-            <button 
-              onClick={() => setIsMembersModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-[#E06D53] hover:bg-[#CC573C] text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-[#E06D53]/20 hover:scale-105 transition-all"
-            >
-              <span>✨</span> เริ่มสร้างเรื่องราวแรก
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Living State - Full Home Experience with HomeMode Component
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24 relative">
+    <div className="min-h-screen bg-gray-50 pb-10">
       {/* Header */}
-      <header className="px-6 pt-12 pb-6 bg-white shadow-sm sticky top-0 z-20">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-serif font-bold text-[#1F1E1D]">{family.name}</h1>
-            <p className="text-sm text-[#59554F]">พื้นที่ความทรงจำร่วมกัน • {members.length} สมาชิก • {pets.length} น้องแมว</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Real-time Notification Bell */}
-            <NotificationBell
-              notifications={notifications}
-              unreadCount={unreadCount}
-              onMarkAsRead={markAsRead}
-              onMarkAllAsRead={markAllAsRead}
-              onClearNotification={clearNotification}
-              onClearAll={clearAll}
-            />
-            <div className="w-12 h-12 bg-gradient-to-br from-[#6B8E68] to-[#4F6D4C] rounded-full flex items-center justify-center text-2xl border-2 border-white shadow-md">
-              🏠
-            </div>
-          </div>
-        </div>
+      <header className="bg-white p-6 shadow-sm sticky top-0 z-10">
+        <h1 className="text-2xl font-bold text-gray-800">{homeName}</h1>
+        <p className="text-sm text-gray-500">พื้นที่ความทรงจำร่วมกัน</p>
       </header>
 
-      <main className="px-4 mt-6 max-w-5xl mx-auto">
-        {/* --- HOME MODE: Complete Experience --- */}
-        {currentUser && (
-          <HomeMode
-            family={family}
-            members={members}
-            pets={pets}
-            events={events}
-            currentUser={currentUser}
-            userRole={userRole}
-            onOpenMembersModal={() => setIsMembersModalOpen(true)}
-            onOpenQRInviteModal={() => setIsQRModalOpen(true)}
-            onSelectPet={handleSelectPet}
-            onAddNewPet={handleAddNewPet}
-            onAddEvent={handleAddEvent}
-            onToggleLike={handleToggleLike}
-            onAddComment={handleAddComment}
-            onDeleteEvent={handleDeleteEvent}
-          />
-        )}
-      </main>
+      <main className="p-6 max-w-md mx-auto">
+        
+        {/* กรณี: มีบ้านแล้ว แต่ยังไม่มีสัตว์เลี้ยง */}
+        {!hasPets && (
+          <div className="flex flex-col items-center text-center py-10 animate-fade-in-up">
+            <div className="w-32 h-32 bg-blue-50 rounded-3xl flex items-center justify-center mb-6 shadow-inner rotate-3">
+              <span className="text-6xl">📦</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">บ้านพร้อมแล้ว... ขาดแค่เจ้าเหมียว!</h2>
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              มาสร้าง Passport และบันทึกเรื่องราวแรกของน้องกันเถอะ<br/>
+              เป็นก้าวแรกของความทรงจำที่ไม่มีวันลืม
+            </p>
+            
+            <button 
+              onClick={() => router.push('/pets/create')} // ไปหน้าเพิ่มแมว
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 mb-4"
+            >
+              <span className="text-2xl">🐱</span> รับน้องเข้าบ้าน
+            </button>
 
-      {/* --- MODALS --- */}
-      {family && currentUser && (
-        <>
-          <FamilyMembersModal
-            isOpen={isMembersModalOpen}
-            onClose={() => setIsMembersModalOpen(false)}
-            family={family}
-            members={members}
-            currentUser={currentUser}
-            userRole={userRole}
-            onUpdateRole={() => {}}
-            onRemoveMember={() => {}}
-            onAddMemberDirectly={() => {}}
-            onOpenQRInvite={() => setIsQRModalOpen(true)}
-          />
-          
-          <QRInviteModal
-            isOpen={isQRModalOpen}
-            onClose={() => setIsQRModalOpen(false)}
-            family={family}
-            currentUserName={currentUser.displayName}
-            onJoinWithToken={() => {}}
-          />
-        </>
-      )}
+            <button 
+              onClick={() => alert("ฟังก์ชันเชิญครอบครัว (กำลังพัฒนา)")}
+              className="w-full bg-white text-gray-700 border border-gray-200 py-4 rounded-2xl font-semibold hover:bg-gray-50 transition-all flex items-center justify-center gap-3"
+            >
+              <span className="text-xl">👨‍👩‍👧‍👦</span> ชวนคนในบ้านมาร่วมสร้าง
+            </button>
+          </div>
+        )}
+
+        {/* กรณี: มีสัตว์เลี้ยงแล้ว แต่ยังไม่มีเรื่องราว (Moments) */}
+        {hasPets && (
+          <div className="flex flex-col items-center text-center py-10 animate-fade-in-up">
+             <div className="w-32 h-32 bg-orange-50 rounded-3xl flex items-center justify-center mb-6 shadow-inner -rotate-2">
+              <span className="text-6xl">📸</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">พร้อมบันทึกโมเมนต์แรก!</h2>
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              ถ่ายรูป กินข้าว นอนหลับ หรือก้าวแรกที่บ้านใหม่<br/>
+              ทุกเรื่องราวล้วนมีความหมาย
+            </p>
+            
+            <button 
+              onClick={() => alert("เปิด Modal บันทึกเรื่องราว")}
+              className="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition-all flex items-center justify-center gap-3"
+            >
+              <span className="text-2xl">✨</span> เริ่มสร้างเรื่องราวแรก
+            </button>
+          </div>
+        )}
+
+      </main>
     </div>
   );
 }
