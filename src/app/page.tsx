@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -37,7 +37,7 @@ export default function HomePage() {
         } else if (members) {
           // กรณีมีข้อมูล
           if (members.homes && typeof members.homes === 'object') {
-             setHomeName(members.homes.name || "บ้านของเรา");
+             setHomeName(members.homes[0].name || "บ้านของเรา");
           }
           
           // เช็คว่ามีสัตว์เลี้ยงไหม (pets อาจเป็น array หรือ null)
