@@ -58,6 +58,52 @@ WHERE flag_name = 'decoration';
 
 ---
 
+## 🐾 Multi-Species Vision: "เลี้ยงร่วมกันภายใต้หลังคาเดียวกัน"
+
+### แนวคิดหลัก
+
+> "Meow World ไม่ได้มีแค่แมว แต่เป็นบ้านสำหรับสัตว์ทุกชนิด"
+
+### หลักการออกแบบ
+
+| หลัก | อธิบาย |
+|---|---|
+| **ชื่อ "Meow World"** | เป็น brand ไม่ใช่ข้อจำกัด |
+| **ทุกสัตว์อยู่ใต้หลังคาเดียวกัน** | เลี้ยงร่วมกันได้ |
+| **ฟีเจอร์เท่าเทียม** | สุนัข might have more features than cats! |
+| **ไม่แยก species** | ไม่รู้สึกเป็น "บุคลากรชั้น 2" |
+
+### Species Features
+
+| Species | ฟีเจอร์พิเศษ |
+|---|---| 
+| 🐱 แมว | Passport, Life Journey, Certificate |
+| 🐕 สุนัข | + Walk Tracker, Training Log, Vaccination |
+| 🐰 กระต่าย | + Housing Setup, Diet Planner |
+| 🐦 นก | + Flight Log, Cage Setup |
+| 🐹 อื่นๆ | + Custom fields |
+
+### แผนภาพ
+
+```
+Meow World
+├── 🏠 Home (บ้านหลัก)
+│   ├── 🪺 Nest 1 (arthur — 🐱)
+│   ├── 🪺 Nest 2 (Lucky — 🐕)
+│   ├── 🪺 Nest 3 (มอลต์ — 🐰)
+│   └── 🪺 Nest 4 (เจ้าสี — 🐦)
+│
+├── 📋 Species Features
+│   ├── 🐱 Cat Mode
+│   ├── 🐕 Dog Mode (+ Walk, Training)
+│   ├── 🐰 Rabbit Mode (+ Housing, Diet)
+│   └── 🐦 Bird Mode (+ Flight, Cage)
+│
+└── 💾 Shared Storage (Family Package)
+```
+
+---
+
 ## 📌 สรุปสำหรับผู้บริหาร (30 วินาที)
 
 Meow World คือ **Living Passport & Life Journey** สำหรับสัตว์เลี้ยง — ไม่ใช่แค่แอพบันทึกข้อมูล แต่เป็น **ที่เก็บความทรงจำ** ที่ออกแบบมาให้ผู้ใช้รู้สึก **ผูกพัน** กับสัตว์เลี้ยงของตัวเอง
