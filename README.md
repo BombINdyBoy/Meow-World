@@ -1,6 +1,6 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Getting Started Updated for V0
 
 อ่านคู่มือการตั้งค่า Supabase Auth และ deploy ได้ที่
 [docs/AUTH_AND_DEPLOYMENT_SETUP.md](docs/AUTH_AND_DEPLOYMENT_SETUP.md)
