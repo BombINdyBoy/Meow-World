@@ -3,16 +3,13 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 // --- Types ---
 interface Pet {
   id: string;
   name: string;
-  breed?: string;
-  avatar_url?: string;
-  birth_date?: string;
-  gender?: string;
+  breed?: string | null;
+  avatar_url?: string | null;
 }
 
 interface Moment {
@@ -20,264 +17,252 @@ interface Moment {
   content: string;
   created_at: string;
   author_name: string;
-  media_urls?: string[];
+  media_urls?: string[] | null;
 }
 
 export default function HomePage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // States
-  const [session, setSession] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [homeName, setHomeName] = useState("บ้านของเรา");
+  const [homeId, setHomeId] = useState<string | null>(null);
+  
   const [pets, setPets] = useState<Pet[]>([]);
   const [moments, setMoments] = useState<Moment[]>([]);
   
-  // UI States
-  const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"onboarding" | "nesting" | "living">("onboarding");
-  const [isPetModalOpen, setIsPetModalOpen] = useState(false);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isMomentModalOpen, setIsMomentModalOpen] = useState(false);
+  // View Modes: 'empty' (ไม่มีอะไร), 'nesting' (มีบ้านรอแมว), 'living' (มีครบ)
+  const [viewMode, setViewMode] = useState<"empty" | "nesting" | "living">("empty");
 
-  // Form States (Pet)
-  const [newPetName, setNewPetName] = useState("");
-  const [newPetBreed, setNewPetBreed] = useState("");
-  const [isCreatingPet, setIsCreatingPet] = useState(false);
-
-  // 1. Initialize
   useEffect(() => {
-    async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push("/login");
-        return;
-      }
-      setSession(session);
-
-      // Fetch Home & Pets
-      const { data: memberData } = await supabase
-        .from("home_members")
-        .select("homes(name), pets(id, name, breed, avatar_url, birth_date, gender)")
-        .eq("user_id", session.user.id)
-        .single();
-
-      if (memberData?.homes) {
-        setHomeName(memberData.homes.name || "บ้านของเรา");
-        if (memberData.pets) {
-          setPets(memberData.pets);
-          setViewMode("living"); // มีแมวแล้ว -> Living Mode (หรือ Nesting ถ้ายังไม่มีเรื่องราว)
-          
-          // Fetch Moments
-          const { data: momentsData } = await supabase
-            .from("life_journey_events")
-            .select("*")
-            .eq("home_id", memberData.homes.id) // ต้องมี home_id ใน memberData หรือ query แยก
-            .order("created_at", { ascending: false })
-            .limit(10);
-            
-          if (momentsData) setMoments(momentsData as any);
-          if (momentsData && momentsData.length === 0) setViewMode("nesting");
-        } else {
-          setViewMode("nesting"); // มีบ้าน แต่ไม่มีแมว
+    async function initData() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push("/login");
+          return;
         }
-      } else {
-        // สร้างบ้านอัตโนมัติถ้ายังไม่มี
-        await createHome(session.user);
+
+        // 1. ดึงข้อมูลสมาชิกและบ้าน
+        const { data: memberData, error: memberError } = await supabase
+          .from("home_members")
+          .select(`
+            homes (id, name),
+            pets (id, name, breed, avatar_url)
+          `)
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (memberError || !memberData) {
+          // ถ้าไม่มีข้อมูลเลย -> สร้างบ้านใหม่
+          await createHome(session.user);
+          setViewMode("empty"); 
+          // Note: หลังสร้างบ้านเสร็จ อาจต้อง reload 1 ครั้งเพื่อให้ข้อมูลมา แต่เพื่อความง่ายเราจะให้ user กดปุ่มสร้างเองในขั้นตอนนี้หรือทำ Auto-reload ในขั้นสูง
+          // สำหรับตอนนี้ให้แสดงหน้าว่างไปก่อน
+          setHomeName("บ้านหลังใหม่ของคุณ");
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. จัดการข้อมูลบ้าน (TypeScript Safe)
+        const home = Array.isArray(memberData.homes) ? memberData.homes[0] : memberData.homes;
+        
+        if (home) {
+          setHomeId(home.id);
+          setHomeName(home.name || "บ้านของเรา");
+
+          // 3. จัดการข้อมูลสัตว์เลี้ยง (TypeScript Safe)
+          const petsList = Array.isArray(memberData.pets) ? memberData.pets : (memberData.pets ? [memberData.pets] : []);
+          setPets(petsList as Pet[]);
+
+          if (petsList.length > 0) {
+            // มีแมวแล้ว -> โหลดเรื่องราว
+            setViewMode("living"); // ตั้งค่าเริ่มต้นเป็น living ก่อน
+            
+            const { data: momentsData } = await supabase
+              .from("life_journey_events")
+              .select("*")
+              .eq("home_id", home.id)
+              .order("created_at", { ascending: false })
+              .limit(10);
+
+            if (momentsData && momentsData.length > 0) {
+              setMoments(momentsData as Moment[]);
+              setViewMode("living");
+            } else {
+              setViewMode("nesting"); // มีแมวแต่ยังไม่มีเรื่องราว
+            }
+          } else {
+            setViewMode("nesting"); // มีบ้านแต่ยังไม่มีแมว
+          }
+        } else {
+          setViewMode("empty");
+        }
+
+      } catch (error) {
+        console.error("Init Error:", error);
+        setViewMode("empty");
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
-    init();
+
+    initData();
   }, []);
 
-  async function createHome(user: any) {
-    const { data, error } = await supabase.from("homes").insert({ name: "บ้านของเรา", owner_id: user.id }).select().single();
-    if (data && !error) {
+  // ฟังก์ชันสร้างบ้าน (เรียกเมื่อไม่มีข้อมูล)
+  const createHome = async (user: any) => {
+    const newHome = { name: "บ้านของเรา", owner_id: user.id };
+    const { data, error } = await supabase.from("homes").insert(newHome).select().single();
+    if (!error && data) {
       await supabase.from("home_members").insert({ home_id: data.id, user_id: user.id, role: "owner" });
-      setHomeName(data.name);
     }
-  }
+  };
 
-  // 2. Handle Create Pet
-  async function handleCreatePet() {
-    if (!newPetName) return;
-    setIsCreatingPet(true);
-    
-    // หา home_id อีกครั้งเพื่อความชัวร์
-    const { data: memberData } = await supabase.from("home_members").select("home_id").eq("user_id", session.user.id).single();
-    if (!memberData) { setIsCreatingPet(false); return; }
-
-    const { error } = await supabase.from("pets").insert({
-      home_id: memberData.home_id,
-      name: newPetName,
-      breed: newPetBreed,
-      avatar_url: null, // TODO: Upload รูป
-      gender: "unknown",
-      birth_date: null
-    });
-
-    if (!error) {
-      alert("ต้อนรับสมาชิกใหม่! 🎉");
-      setIsPetModalOpen(false);
-      setNewPetName("");
-      setNewPetBreed("");
-      window.location.reload(); // Reload เพื่อโหลดข้อมูลใหม่
-    } else {
-      alert("เกิดข้อผิดพลาด: " + error.message);
-    }
-    setIsCreatingPet(false);
-  }
-
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-orange-50"><div className="animate-bounce text-4xl">🐱</div></div>;
-
-  return (
-    <div className="min-h-screen bg-gray-50 pb-24 relative overflow-hidden font-sans">
-      
-      {/* --- HEADER --- */}
-      <header className="px-6 pt-12 pb-4 bg-white/80 backdrop-blur sticky top-0 z-20 border-b border-gray-100 flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">{homeName}</h1>
-          <p className="text-xs text-gray-500">{pets.length} สมาชิกขนฟู</p>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
+        <div className="text-center animate-pulse">
+          <div className="text-6xl mb-4">🏠</div>
+          <p className="text-gray-500 font-medium">กำลังเตรียมบ้าน...</p>
         </div>
-        <button onClick={() => setIsInviteModalOpen(true)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
-          👥
-        </button>
+      </div>
+    );
+  }
+
+  // --- RENDER ตาม Mode ---
+
+  // 1. Empty / Need Setup
+  if (viewMode === "empty" || !homeId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">ยินดีต้อนรับสู่ Meow World</h1>
+          <p className="text-gray-500 mb-6">ระบบกำลังเตรียมพื้นที่ส่วนตัวให้คุณ...</p>
+          <button onClick={() => window.location.reload()} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">รีเฟรชหน้าจอ</button>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Nesting (มีบ้าน รอรับแมว)
+  if (viewMode === "nesting") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+        {/* Background Decor */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+           <div className="absolute top-10 left-10 text-6xl">🐾</div>
+           <div className="absolute bottom-20 right-10 text-6xl">🧶</div>
+        </div>
+
+        <div className="relative z-10 max-w-md w-full bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-lg border border-white">
+          <div className="text-7xl mb-6 animate-bounce">📦</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{homeName}</h1>
+          <p className="text-gray-600 mb-8 leading-relaxed">
+            บ้านหลังใหม่พร้อมแล้ว!<br/>
+            มาต้อนรับสมาชิกขนฟูคนแรกกันเถอะ
+          </p>
+          
+          <button 
+            onClick={() => alert("เปิดหน้าเพิ่มสัตว์เลี้ยง (กำลังพัฒนา)")}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition transform hover:scale-[1.02] flex items-center justify-center gap-3 text-lg"
+          >
+            <span>🐱</span> รับน้องเข้าบ้าน
+          </button>
+          
+          <button 
+             onClick={() => alert("เปิดหน้าเชิญสมาชิก (กำลังพัฒนา)")}
+             className="mt-4 text-gray-500 hover:text-gray-800 font-medium text-sm underline decoration-dashed"
+          >
+            หรือ ชวนคนในบ้านมาร่วมสร้าง
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Living (มีแมว มีเรื่องราว)
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Header */}
+      <header className="bg-white px-6 pt-12 pb-6 shadow-sm sticky top-0 z-10">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{homeName}</h1>
+            <p className="text-sm text-gray-500">{pets.length} สมาชิกขนฟู • {moments.length} เรื่องราว</p>
+          </div>
+          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-xl">🏠</div>
+        </div>
       </header>
 
-      <main className="p-4 max-w-md mx-auto">
-        
-        {/* --- MODE 1: NESTING (มีบ้าน ไม่มีแมว) --- */}
-        {viewMode === "nesting" && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in-up text-center">
-            <div className="relative mb-8 group cursor-pointer" onClick={() => setIsPetModalOpen(true)}>
-              <div className="absolute inset-0 bg-blue-400 blur-2xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
-              <div className="relative w-40 h-40 bg-white rounded-3xl shadow-xl border-4 border-blue-50 flex items-center justify-center transform group-hover:scale-105 transition duration-300">
-                <span className="text-6xl">📦</span>
+      <main className="p-4 space-y-6">
+        {/* Pets Section */}
+        <section>
+          <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <span>🐾</span> สมาชิกในบ้าน
+          </h2>
+          <div className="flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
+            {pets.map((pet) => (
+              <div key={pet.id} className="flex-shrink-0 w-28 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-2 overflow-hidden flex items-center justify-center text-2xl">
+                  {pet.avatar_url ? "🖼️" : "🐱"}
+                </div>
+                <p className="font-bold text-gray-900 text-sm truncate">{pet.name}</p>
+                <p className="text-xs text-gray-500">{pet.breed || "แมวเหมียว"}</p>
               </div>
-              <div className="absolute -bottom-4 -right-4 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-bounce">
-                เปิดเลย!
-              </div>
-            </div>
-            
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">บ้านหลังใหม่รอเจ้าเหมียวอยู่</h2>
-            <p className="text-gray-500 mb-8 max-w-xs">มาเริ่มเรื่องราวด้วยกันเถอะ</p>
-            
-            <button 
-              onClick={() => setIsPetModalOpen(true)}
-              className="w-full max-w-xs bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition flex items-center justify-center gap-3"
-            >
-              <span className="text-2xl">🐱</span> รับน้องเข้าบ้าน
+            ))}
+            <button className="flex-shrink-0 w-28 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 hover:text-orange-500 transition">
+              <span className="text-2xl mb-1">+</span>
+              <span className="text-xs font-medium">เพิ่มน้อง</span>
             </button>
-            <p className="mt-4 text-sm text-gray-400">หรือ</p>
-            <button onClick={() => setIsInviteModalOpen(true)} className="mt-2 text-blue-600 font-medium hover:underline">ชวนคนในบ้านมาร่วมสร้าง</button>
           </div>
-        )}
+        </section>
 
-        {/* --- MODE 2: LIVING (มีแมวแล้ว) --- */}
-        {viewMode === "living" && (
-          <div className="space-y-6 animate-fade-in-up">
-            
-            {/* Pet Carousel */}
-            <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
-              {pets.map(pet => (
-                <div key={pet.id} className="flex-shrink-0 w-32 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full mb-2 overflow-hidden flex items-center justify-center text-2xl">
-                    {pet.avatar_url ? <Image src={pet.avatar_url} alt={pet.name} width={64} height={64} className="object-cover"/> : "🐱"}
-                  </div>
-                  <span className="font-bold text-gray-800 text-sm truncate w-full">{pet.name}</span>
-                  <span className="text-[10px] text-gray-400">{pet.breed || "แมว"}</span>
-                  <button onClick={() => router.push(`/passport/${pet.id}`)} className="mt-2 text-[10px] bg-gray-100 px-2 py-1 rounded-md hover:bg-gray-200 w-full">ดู Passport</button>
-                </div>
-              ))}
-              <button onClick={() => setIsPetModalOpen(true)} className="flex-shrink-0 w-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-blue-300 hover:text-blue-500 transition">
-                <span className="text-2xl mb-1">+</span>
-                <span className="text-[10px] font-medium">เพิ่มน้อง</span>
-              </button>
-            </div>
-
-            {/* Moments Feed */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-800 text-lg">ความทรงจำ</h3>
-                <button onClick={() => setIsMomentModalOpen(true)} className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-full font-medium hover:bg-gray-800 transition">+ บันทึก</button>
-              </div>
-              
-              {moments.length === 0 ? (
-                <div className="bg-white rounded-2xl p-8 text-center border border-dashed border-gray-300">
-                  <p className="text-gray-400 mb-4">ยังไม่มีเรื่องราวในบ้าน</p>
-                  <button onClick={() => setIsMomentModalOpen(true)} className="text-blue-600 font-bold hover:underline">เริ่มเขียนเรื่องแรก</button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {moments.map(m => (
-                    <div key={m.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-xs font-bold text-green-600">M</div>
-                        <span className="text-xs text-gray-500">{new Date(m.created_at).toLocaleDateString('th-TH')}</span>
-                      </div>
-                      <p className="text-gray-700 text-sm whitespace-pre-line">{m.content}</p>
+        {/* Moments Feed */}
+        <section>
+          <div className="flex justify-between items-end mb-3">
+            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <span>✨</span> ความทรงจำล่าสุด
+            </h2>
+            <button className="text-xs text-orange-600 font-medium hover:underline">ดูทั้งหมด</button>
+          </div>
+          
+          {moments.length === 0 ? (
+             <div className="bg-white p-8 rounded-2xl text-center border border-dashed border-gray-200">
+               <p className="text-gray-400 mb-4">ยังไม่มีเรื่องราวในบ้าน</p>
+               <button onClick={() => alert("เปิด Modal บันทึกเรื่องราว")} className="text-orange-600 font-bold text-sm hover:underline">เริ่มเขียนเรื่องแรก</button>
+             </div>
+          ) : (
+            <div className="space-y-4">
+              {moments.map((m) => (
+                <article key={m.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-xs font-bold text-green-700">M</div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">สมาชิกในบ้าน</p>
+                      <p className="text-xs text-gray-400">{new Date(m.created_at).toLocaleDateString('th-TH')}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{m.content}</p>
+                  {m.media_urls && m.media_urls.length > 0 && (
+                    <div className="mt-3 h-32 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 text-sm">
+                      📷 รูปภาพ/วิดีโอ
+                    </div>
+                  )}
+                </article>
+              ))}
             </div>
-          </div>
-        )}
+          )}
+        </section>
       </main>
 
-      {/* --- FAB --- */}
-      {viewMode === "living" && (
-        <button onClick={() => setIsMomentModalOpen(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition z-30">
-          <span className="text-2xl">+</span>
-        </button>
-      )}
-
-      {/* --- MODALS (Inline for simplicity) --- */}
-      
-      {/* 1. Add Pet Modal */}
-      {isPetModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-scale-up">
-            <h2 className="text-xl font-bold mb-4 text-center">🐱 รับน้องเข้าบ้าน</h2>
-            <input type="text" placeholder="ชื่อน้องแมว" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" value={newPetName} onChange={(e) => setNewPetName(e.target.value)} />
-            <input type="text" placeholder="สายพันธุ์ (เช่น วิเชียรมาศ)" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500" value={newPetBreed} onChange={(e) => setNewPetBreed(e.target.value)} />
-            <button onClick={handleCreatePet} disabled={isCreatingPet || !newPetName} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold disabled:opacity-50 hover:bg-blue-700 transition">
-              {isCreatingPet ? "กำลังสร้าง..." : "ยืนยันการรับน้อง"}
-            </button>
-            <button onClick={() => setIsPetModalOpen(false)} className="w-full mt-2 text-gray-500 py-2 text-sm">ยกเลิก</button>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Invite Modal (Simple Version) */}
-      {isInviteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🏠</div>
-            <h2 className="text-xl font-bold mb-2">ชวนคนในบ้าน</h2>
-            <p className="text-sm text-gray-500 mb-6">สแกน QR นี้เพื่อร่วมสร้างบ้านไปด้วยกัน</p>
-            <div className="bg-gray-100 w-48 h-48 mx-auto rounded-xl flex items-center justify-center mb-4">
-              <span className="text-gray-400">QR Code Placeholder</span>
-            </div>
-            <button onClick={() => setIsInviteModalOpen(false)} className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold">ปิดหน้าต่าง</button>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Moment Modal (Simple Version) */}
-      {isMomentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4">✨ บันทึกเรื่องราว</h2>
-            <textarea className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 h-32 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="วันนี้เกิดอะไรขึ้นกับน้องบ้าง?"></textarea>
-            <div className="flex gap-2">
-              <button onClick={() => setIsMomentModalOpen(false)} className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold">ยกเลิก</button>
-              <button onClick={() => { alert("บันทึกสำเร็จ (Mockup)"); setIsMomentModalOpen(false); }} className="flex-1 bg-orange-500 text-white py-3 rounded-xl font-bold">บันทึก</button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* FAB Button */}
+      <button 
+        onClick={() => alert("เปิด Modal บันทึกเรื่องราว")}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition z-20"
+      >
+        <span className="text-3xl font-light">+</span>
+      </button>
     </div>
   );
 }
