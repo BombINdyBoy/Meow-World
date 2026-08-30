@@ -87,6 +87,152 @@ Living State → เห็น Feed ความทรงจำ
 
 ---
 
+## 🏠 Home Mode Concept: "บ้านของทุกคน"
+
+### แนวคิดหลัก
+
+```
+🐱 MEOW WORLD
+      │
+      ▼
+┌──────────────┐
+│  HOME MODE   │  ← ตอนนี้ทำตรงนี้
+│  COMPLETE    │
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│  LAND / UI   │
+│  2 HOME      │
+└──────┬───────┘
+       │
+  ┌────┼────┐
+  ▼    ▼    ▼
+FARM COMMUNITY OTHER
+  │
+  ▼
+STORAGE
+```
+
+### สมมุติฐาน: ครอบครัว 4 คน
+
+```
+👨 พ่อ: "ซื้อ family package ให้ทั้งบ้าน"
+👩 แม่: "ใช้พื้นที่ร่วมกัน"
+👦 ลูกชาย (8 ขวบ): "ผมก็อยากมีบ้านสำหรับเจ้า小康 ของผม"
+👧 ลูกสาว (5 ขวบ): "หนูอยากมีบ้านสำหรับเจ้า arthur ของหนู"
+```
+
+**Key Insight:**
+- ทุกคนมี **บ้านของตัวเอง** (home ส่วนตัว)
+- แต่ใช้ **พื้นที่จัดเก็บร่วมกัน** (shared storage)
+- พ่อเป็นคนจ่ายเงิน → family package
+- ลูกๆ ไม่ต้องจ่าย → แต่มีพื้นที่ของตัวเอง
+
+### Architecture ที่ขยาย
+
+```
+Home Mode
+├── 🏠 My Home (บ้านส่วนตัวของแต่ละคน)
+│   ├── Pets (สัตว์เลี้ยงของฉัน)
+│   ├── Life Journey (ความทรงจำของฉัน)
+│   └── Certificates (ใบรับรองของฉัน)
+│
+├── 👨‍👩‍👧‍👦 Family Home (บ้านครอบครัว)
+│   ├── Family Members (สมาชิก)
+│   ├── Shared Pets (สัตว์เลี้ยงที่แชร์)
+│   └── Family Feed (เรื่องราวของครอบครัว)
+│
+├── 🌾 Farm Mode
+│   ├── Pet Profiles (ข้อมูลสัตว์เลี้ยง)
+│   ├── Health Records (บันทึกสุขภาพ)
+│   └── Vaccination Tracker
+│
+├── 🌐 Community Mode
+│   ├── Pet Profiles (โปรไฟล์สาธารณะ)
+│   ├── Events (กิจกรรม)
+│   └── Marketplace (ซื้อขาย)
+│
+└── 💾 Storage (พื้นที่จัดเก็บ)
+    ├── Family Package (จ่ายคนเดียว ใช้ทั้งบ้าน)
+    ├── Shared Storage (พื้นที่ร่วม)
+    └── Individual Quota (โควตาแต่ละคน)
+```
+
+### Database Schema ที่ต้องเพิ่ม
+
+```sql
+-- Family Storage Package
+CREATE TABLE public.family_packages (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  family_id uuid REFERENCES public.families(id) ON DELETE CASCADE,
+  storage_limit bigint DEFAULT 5368709120, -- 5GB default
+  storage_used bigint DEFAULT 0,
+  plan_type text DEFAULT 'free', -- free, basic, premium
+  created_at timestamptz DEFAULT NOW(),
+  expires_at timestamptz
+);
+
+-- Individual Home (บ้านส่วนตัวของแต่ละคน)
+CREATE TABLE public.user_homes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  family_id uuid REFERENCES public.families(id),
+  home_name text NOT NULL,
+  avatar_url text,
+  created_at timestamptz DEFAULT NOW()
+);
+
+-- Shared Storage Usage
+CREATE TABLE public.storage_usage (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  family_id uuid REFERENCES public.families(id),
+  file_type text NOT NULL, -- image, video, document
+  file_size bigint NOT NULL,
+  file_url text NOT NULL,
+  created_at timestamptz DEFAULT NOW()
+);
+```
+
+### Flow ของ Family Package
+
+```
+พ่อสมัคร Family Package
+    │
+    ▼
+สร้าง Family Home
+    │
+    ├── 👨 พ่อ → มีบ้านส่วนตัว
+    ├── 👩 แม่ → มีบ้านส่วนตัว
+    ├── 👦 ลูกชาย → มีบ้านส่วนตัว (for เจ้า小康)
+    └── 👧 ลูกสาว → มีบ้านส่วนตัว (for เจ้า arthur)
+    │
+    ▼
+ทุกคนใช้พื้นที่จัดเก็บร่วมกัน (5GB)
+    │
+    ├── รูปภาพสัตว์เลี้ยง
+    ├── วิดีโอความทรงจำ
+    └── เอกสาร (ใบรับรอง, ผลตรวจสุขภาพ)
+```
+
+### UX Flow สำหรับ Family Mode
+
+```
+Login → เลือกบ้าน
+    │
+    ├── "บ้านของฉัน" → My Home (ส่วนตัว)
+    │   ├── 🐱 Pets ของฉัน
+    │   ├── 📸 Memories ของฉัน
+    │   └── 📜 Certificates ของฉัน
+    │
+    └── "บ้านครอบครัว" → Family Home
+        ├── 👨‍👩‍👧‍👦 สมาชิก
+        ├── 🐾 สัตว์เลี้ยงทั้งหมด
+        └── ✨ เรื่องราวของครอบครัว
+```
+
+---
+
 ## 🏗️ Architecture
 
 ### Tech Stack
