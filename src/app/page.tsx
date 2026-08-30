@@ -4,26 +4,27 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-// --- Types ---
+// --- Types matching actual DB schema ---
 interface Pet {
   id: string;
   name: string;
   species: string;
   breed?: string | null;
   birth_date?: string | null;
-  weight?: number | null;
+  avatar_url?: string | null;
 }
 
 interface JourneyEvent {
   id: string;
-  pet_id: string;
-  event_date: string;
+  pet_id: string | null;
+  home_id: string;
   event_type: string;
-  title: string;
-  description?: string | null;
+  content?: string | null;
+  media_urls?: string[] | null;
+  created_at: string;
 }
 
-interface Family {
+interface Home {
   id: string;
   name: string;
   owner_id: string;
@@ -35,7 +36,7 @@ export default function HomePage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [family, setFamily] = useState<Family | null>(null);
+  const [home, setHome] = useState<Home | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [events, setEvents] = useState<JourneyEvent[]>([]);
 
@@ -46,92 +47,76 @@ export default function HomePage() {
     if (!user) return;
 
     try {
-      // 1. ดึง family ที่ user เป็น owner หรือ member
-      const { data: ownedFamilies } = await supabase
-        .from("families")
+      // 1. ดึง home ที่ user เป็น owner หรือ member
+      const { data: ownedHomes } = await supabase
+        .from("homes")
         .select("id, name, owner_id")
         .eq("owner_id", user.id)
         .limit(1);
 
-      const { data: memberFamilies } = await supabase
-        .from("family_members")
-        .select("family_id, families(id, name, owner_id)")
+      const { data: memberHomes } = await supabase
+        .from("home_members")
+        .select("home_id, homes(id, name, owner_id)")
         .eq("user_id", user.id)
         .limit(1);
 
-      let currentFamily: Family | null = null;
+      let currentHome: Home | null = null;
 
-      if (ownedFamilies && ownedFamilies.length > 0) {
-        currentFamily = ownedFamilies[0] as Family;
-      } else if (memberFamilies && memberFamilies.length > 0) {
-        const fam = memberFamilies[0] as any;
-        currentFamily = fam.families as Family;
+      if (ownedHomes && ownedHomes.length > 0) {
+        currentHome = ownedHomes[0] as Home;
+      } else if (memberHomes && memberHomes.length > 0) {
+        const h = memberHomes[0] as any;
+        currentHome = h.homes as Home;
       }
 
-      if (!currentFamily) {
-        // ยังไม่มี family -> สร้างใหม่
-        const { data: newFamily } = await supabase
-          .from("families")
+      if (!currentHome) {
+        // ยังไม่มี home -> สร้างใหม่
+        const { data: newHome } = await supabase
+          .from("homes")
           .insert({ name: "บ้านของเรา", owner_id: user.id })
           .select()
           .single();
 
-        if (newFamily) {
-          // เพิ่มตัวเองเป็น owner ใน family_members
-          await supabase.from("family_members").insert({
-            family_id: newFamily.id,
+        if (newHome) {
+          await supabase.from("home_members").insert({
+            home_id: newHome.id,
             user_id: user.id,
             role: "owner",
           });
-          currentFamily = newFamily as Family;
+          currentHome = newHome as Home;
         }
       }
 
-      setFamily(currentFamily);
+      setHome(currentHome);
 
-      if (!currentFamily) {
+      if (!currentHome) {
         setViewMode("empty");
         setIsLoading(false);
         return;
       }
 
-      // 2. ดึง pets ที่ user เป็นเจ้าของ หรือ share ผ่าน family
-      const { data: ownedPets } = await supabase
+      // 2. ดึง pets ที่อยู่ใน home นี้
+      const { data: petsData } = await supabase
         .from("pets")
-        .select("id, name, species, breed, birth_date, weight")
-        .eq("owner_id", user.id)
+        .select("id, name, species, breed, birth_date, avatar_url")
+        .eq("home_id", currentHome.id)
+        .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      const { data: sharedPets } = await supabase
-        .from("pet_shares")
-        .select("pets(id, name, species, breed, birth_date, weight)")
-        .eq("family_id", currentFamily.id);
+      setPets((petsData as Pet[]) || []);
 
-      const allPets: Pet[] = [
-        ...(ownedPets || []),
-        ...((sharedPets || []).map((s: any) => s.pets).filter(Boolean)),
-      ];
-
-      // Remove duplicates by id
-      const uniquePets = allPets.filter(
-        (pet, index, self) => index === self.findIndex((p) => p.id === pet.id)
-      );
-
-      setPets(uniquePets);
-
-      if (uniquePets.length === 0) {
+      if (!petsData || petsData.length === 0) {
         setViewMode("nesting");
         setIsLoading(false);
         return;
       }
 
-      // 3. ดึง events สำหรับ pets ทั้งหมด
-      const petIds = uniquePets.map((p) => p.id);
+      // 3. ดึง events สำหรับ home นี้
       const { data: eventsData } = await supabase
         .from("life_journey_events")
-        .select("id, pet_id, event_date, event_type, title, description")
-        .in("pet_id", petIds)
-        .order("event_date", { ascending: false })
+        .select("id, pet_id, home_id, event_type, content, media_urls, created_at")
+        .eq("home_id", currentHome.id)
+        .order("created_at", { ascending: false })
         .limit(10);
 
       setEvents((eventsData as JourneyEvent[]) || []);
@@ -174,7 +159,7 @@ export default function HomePage() {
   }
 
   // 1. Empty
-  if (viewMode === "empty" || !family) {
+  if (viewMode === "empty" || !home) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
@@ -199,7 +184,7 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-md w-full bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-lg border border-white">
           <div className="text-7xl mb-6 animate-bounce">📦</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{family.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{home.name}</h1>
           <p className="text-gray-600 mb-8 leading-relaxed">
             บ้านหลังใหม่พร้อมแล้ว!<br />
             มาต้อนรับสมาชิกขนฟูคนแรกกันเถอะ
@@ -230,7 +215,7 @@ export default function HomePage() {
       <header className="bg-white px-6 pt-12 pb-6 shadow-sm sticky top-0 z-10">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{family.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{home.name}</h1>
             <p className="text-sm text-gray-500">
               {pets.length} สมาชิกขนฟู • {events.length} เรื่องราว
             </p>
@@ -252,8 +237,12 @@ export default function HomePage() {
                 onClick={() => router.push(`/pets/${pet.id}`)}
                 className="flex-shrink-0 w-28 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md transition"
               >
-                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center text-2xl">
-                  🐱
+                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center text-2xl overflow-hidden">
+                  {pet.avatar_url ? (
+                    <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                  ) : (
+                    "🐱"
+                  )}
                 </div>
                 <p className="font-bold text-gray-900 text-sm truncate">{pet.name}</p>
                 <p className="text-xs text-gray-500">{pet.species}</p>
@@ -304,17 +293,16 @@ export default function HomePage() {
                 return (
                   <article
                     key={event.id}
-                    onClick={() => pet && router.push(`/pets/${pet.id}`)}
-                    className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition"
+                    className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100"
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-xs font-bold text-green-700">
-                        {pet?.name?.slice(0, 1).toUpperCase() || "?"}
+                        {pet?.name?.slice(0, 1).toUpperCase() || "🐱"}
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-gray-900">{event.title}</p>
+                        <p className="font-bold text-sm text-gray-900">{pet?.name || "ความทรงจำ"}</p>
                         <p className="text-xs text-gray-400">
-                          {pet?.name} • {new Date(event.event_date).toLocaleDateString("th-TH")}
+                          {new Date(event.created_at).toLocaleDateString("th-TH")}
                         </p>
                       </div>
                     </div>
@@ -323,8 +311,8 @@ export default function HomePage() {
                         {event.event_type}
                       </span>
                     </div>
-                    {event.description && (
-                      <p className="text-gray-600 text-sm leading-relaxed mt-1">{event.description}</p>
+                    {event.content && (
+                      <p className="text-gray-600 text-sm leading-relaxed mt-1">{event.content}</p>
                     )}
                   </article>
                 );
