@@ -7,6 +7,57 @@
 
 ---
 
+## ⚙️ Feature Flag System: ควบคุมการเปิด/ปิดฟีเจอร์
+
+### แนวคิด
+
+> "เปิดใช้งานฟีเจอร์ได้จาก UI โดยไม่ต้อง deploy ใหม่"
+
+### Feature Flags
+
+| Flag | Description | Default |
+|---|---|---|
+| `home_mode` | Home Mode - หน้าหลัก | ✅ ON |
+| `nest_system` | Nest System - รังส่วนตัว | ❌ OFF |
+| `decoration` | Decoration - ตกแต่งบ้าน | ❌ OFF |
+| `community` | Community - ชุมชน | ❌ OFF |
+| `vet_market` | Vet Market - ตลาดสัตวแพทย์ | ❌ OFF |
+| `family_package` | Family Package - พื้นที่จัดเก็บ | ❌ OFF |
+
+### วิธีใช้
+
+```sql
+-- เปิดฟีเจอร์
+UPDATE feature_flags SET is_enabled = true WHERE flag_name = 'nest_system';
+
+-- ปิดฟีเจอร์
+UPDATE feature_flags SET is_enabled = false WHERE flag_name = 'community';
+
+-- กำหนดให้ user เฉพาะ
+UPDATE feature_flags SET target_users = ARRAY['uuid1', 'uuid2'] 
+WHERE flag_name = 'decoration';
+```
+
+### แผนภาพ
+
+```
+┌─────────────────────────────────────────┐
+│  ⚙️ Feature Flags Management            │
+│                                         │
+│  🏠 Home Mode          [ON ] ✅         │
+│  🪺 Nest System        [OFF] ❌         │
+│  🎨 Decoration         [OFF] ❌         │
+│  🏘️ Community          [OFF] ❌         │
+│  🏪 Vet Market         [OFF] ❌         │
+│  💾 Family Package     [OFF] ❌         │
+│                                         │
+│  📊 Rollout: 100% of users              │
+│  👥 Target: All users                   │
+└─────────────────────────────────────────┘
+```
+
+---
+
 ## 📌 สรุปสำหรับผู้บริหาร (30 วินาที)
 
 Meow World คือ **Living Passport & Life Journey** สำหรับสัตว์เลี้ยง — ไม่ใช่แค่แอพบันทึกข้อมูล แต่เป็น **ที่เก็บความทรงจำ** ที่ออกแบบมาให้ผู้ใช้รู้สึก **ผูกพัน** กับสัตว์เลี้ยงของตัวเอง
