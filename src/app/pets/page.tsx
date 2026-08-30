@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pet, PetFormData } from '@/types/pet';
 import { PetCard } from '@/components/pets/PetCard';
@@ -16,13 +16,8 @@ export default function PetsPage() {
   const [editingPet, setEditingPet] = useState<Pet | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
-  const supabase = createClient();
-
-  useEffect(() => {
-    fetchPets();
-  }, []);
-
-  async function fetchPets() {
+  const fetchPets = useCallback(async () => {
+    const supabase = createClient();
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -32,14 +27,21 @@ export default function PetsPage() {
 
       if (error) throw error;
       setPets(data || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'ไม่สามารถโหลดข้อมูลสัตว์เลี้ยงได้';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchPets();
+  }, [fetchPets]);
 
   async function handleCreate(data: PetFormData) {
+    const supabase = createClient();
     try {
       setSubmitting(true);
       
@@ -55,8 +57,9 @@ export default function PetsPage() {
 
       setShowForm(false);
       fetchPets();
-    } catch (err: any) {
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการเพิ่มสัตว์เลี้ยง';
+      alert(`เกิดข้อผิดพลาด: ${message}`);
     } finally {
       setSubmitting(false);
     }
@@ -64,7 +67,7 @@ export default function PetsPage() {
 
   async function handleUpdate(data: PetFormData) {
     if (!editingPet) return;
-
+    const supabase = createClient();
     try {
       setSubmitting(true);
 
@@ -77,8 +80,9 @@ export default function PetsPage() {
 
       setEditingPet(undefined);
       fetchPets();
-    } catch (err: any) {
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลสัตว์เลี้ยง';
+      alert(`เกิดข้อผิดพลาด: ${message}`);
     } finally {
       setSubmitting(false);
     }
@@ -86,7 +90,7 @@ export default function PetsPage() {
 
   async function handleDelete(pet: Pet) {
     if (!confirm(`คุณต้องการลบ "${pet.name}" ใช่หรือไม่?`)) return;
-
+    const supabase = createClient();
     try {
       const { error } = await supabase
         .from('pets')
@@ -96,8 +100,9 @@ export default function PetsPage() {
       if (error) throw error;
 
       fetchPets();
-    } catch (err: any) {
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการลบสัตว์เลี้ยง';
+      alert(`เกิดข้อผิดพลาด: ${message}`);
     }
   }
 

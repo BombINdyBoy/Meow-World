@@ -1,14 +1,13 @@
 # 🐱 Meow World V4.1 - Setup Guide
 
-**วันที่:** 28 สิงหาคม 2026  
-**สถานะ:** พร้อม Deploy บน Vercel
+**วันที่:** 30 สิงหาคม 2026  
+**สถานะ:** ✅ Login สำเร็จแล้ว | Deploy บน Vercel
 
 ---
 
-## 📋 สรุปสิ่งที่ทำเสร็จแล้ว (End of Day)
+## 📋 สรุปสิ่งที่ทำเสร็จแล้ว
 
-### ✅ วันนี้ทำอะไรบ้าง
-
+### Phase 1: Foundation & Features (28 ส.ค.)
 1. **Commit & Push โค้ดขึ้น GitHub** ✅
    - ลบ `netlify.toml` (ย้ายจาก Netlify ไป Vercel)
    - ลบ `tailwind.config.js`
@@ -31,86 +30,50 @@
    - แสดง Error Message บนหน้า Login
    - เพิ่ม Debug Log ใน Auth Callback
 
----
+### Phase 2: Deployment & Auth (30 ส.ค.)
+1. **แก้ Build Error - Supabase Prerender** ✅
+   - ย้าย `createClient()` ออกจาก top-level component
+   - สร้าง Supabase client ภายใน `useEffect` และ event handlers เท่านั้น
+   - แก้ `QRInviteModal` prop mismatch (`createdBy` → ลบออก)
 
-## 🔧 สิ่งที่ต้องทำต่อ (เมื่อกลับมา)
+2. **แก้ OAuth Google Login** ✅
+   - ตั้งค่า Google Cloud Console Authorized redirect URI:
+     ```
+     https://eqemlaqgzzjilshrhgdo.supabase.co/auth/v1/callback
+     ```
+   - อัปเดต Supabase URL Configuration:
+     - Site URL: `https://meow-world-heart-edition.vercel.app`
+     - Redirect URLs: `https://meow-world-heart-edition.vercel.app/auth/callback`
+   - แก้ `auth/callback/route.tsx` - จัดการ `NEXT_REDIRECT` error ที่ `catch` block ดักจับผิด
 
-### Step 1: ตั้งค่า Vercel Environment Variables
-
-1. ไปที่ [Vercel Dashboard](https://vercel.com/dashboard)
-2. เลือกโปรเจค **Meow World**
-3. ไปที่ **Settings** → **Environment Variables**
-4. เพิ่ม 2 ตัวนี้:
-
-| Variable | Value |
-|----------|-------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://tnshkncxfzkmmrmbepyb.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuc2hrbmN4ZnprbW1ybWJlcHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MTQzNjYsImV4cCI6MjA5NzA5MDM2Nn0.MUDH8i3_YX58-inhC2flsyHGLl8VplaGf274XBNPa0o` |
-
-5. เลือก Environment: **Production**
-6. กด **Save**
-
----
-
-### Step 2: Deploy บน Vercel
-
-รันคำสั่งใน terminal:
-
-```bash
-vercel --prod
-```
-
-หรือถ้าまだไม่ได้ Login:
-
-```bash
-vercel login
-vercel --prod
-```
+3. **ย้าย Deploy ไป Vercel** ✅
+   - Project: `meow-world-heart-edition`
+   - Login สำเร็จ → สร้าง profile ใน Supabase แล้ว
 
 ---
 
-### Step 3: Fix OAuth Google Login
-
-#### แก้ไขใน Google Cloud Console
-
-1. ไปที่ [Google Cloud Console - Credentials](https://console.cloud.google.com/apis/credentials)
-2. คลิกที่ **OAuth 2.0 Client ID** ของ Meow World
-3. แก้ไข **Authorized redirect URIs**:
+## 🔗 OAuth Flow (ที่ทำงานแล้ว)
 
 ```
-https://tnshkncxfzkmmrmbepyb.supabase.co/auth/v1/callback
+User → Login Page → Google OAuth → Supabase Callback → App Callback (/auth/callback) → Home (/)
 ```
 
-> ⚠️ **สำคัญ:** ลบ URL อื่นๆ ออก ให้เหลือแค่ตัวนี้
-
-4. กด **Save**
-
-#### ตรวจสอบใน Supabase Dashboard
-
-1. ไปที่ [Supabase Dashboard](https://app.supabase.com) → Project → **Authentication** → **Providers**
-2. คลิก **Google**
-3. ตรวจสอบว่า **Client ID** และ **Client Secret** ตรงกับที่ Google Cloud Console
-4. กด **Save**
+| Step | URL |
+|------|-----|
+| Google Redirect URI | `https://eqemlaqgzzjilshrhgdo.supabase.co/auth/v1/callback` |
+| Supabase Site URL | `https://meow-world-heart-edition.vercel.app` |
+| App Callback | `https://meow-world-heart-edition.vercel.app/auth/callback` |
 
 ---
 
-### Step 4: ทดสอบ
+## 🐛 ปัญหาที่แก้แล้ว
 
-1. ไปที่ `https://your-app.vercel.app/login`
-2. คลิก "เข้าสู่ระบบด้วย Google"
-3. เลือก Google Account
-4. **คาดหวัง:** Redirect กลับหน้า Home สำเร็จ
-
----
-
-## 🐛 ถ้าเจอ Error
-
-| Error | วิธีแก้ |
-|-------|---------|
-| `redirect_uri_mismatch` | แก้ Google Cloud Console redirect URI |
-| `Invalid code` | ตรวจสอบ Supabase Provider config |
-| `No authentication code` | ปัญหา OAuth flow |
-| `NEXT_PUBLIC_SUPABASE_URL is not defined` | เพิ่ม ENV บน Vercel |
+| ปัญหา | สาเหตุ | วิธีแก้ |
+|-------|--------|---------|
+| `prerender error: URL and API key required` | `createClient()` ถูกเรียกตอน static generation | ย้ายเข้า `useEffect` |
+| `redirect_uri_mismatch` | Google Cloud Console URI ไม่ตรง Supabase | ตั้งค่า URI ให้ตรง |
+| Site not found (Netlify) | Supabase Site URL ชี้ไป Netlify เก่า | เปลี่ยนเป็น Vercel URL |
+| `Unexpected error occurred` | `catch` block ดักจับ `NEXT_REDIRECT` ผิด | เช็ค `error.digest` ก่อน re-throw |
 
 ---
 
@@ -118,34 +81,41 @@ https://tnshkncxfzkmmrmbepyb.supabase.co/auth/v1/callback
 
 | ไฟล์ | คำอธิบาย |
 |------|----------|
+| `src/app/page.tsx` | หน้าแรก (Home Mode) - แก้ prerender issue |
+| `src/app/login/page.tsx` | หน้า Login พร้อม Google OAuth |
+| `src/app/auth/callback/route.tsx` | OAuth callback - แก้ NEXT_REDIRECT issue |
+| `src/utils/supabase/client.ts` | Supabase Browser client |
+| `src/utils/supabase/server.ts` | Supabase Server client |
 | `src/utils/certTemplates.ts` | Certificate templates 6 แบบ |
 | `src/components/certificate/CertificateFlipCard.tsx` | Flip Card component |
 | `src/components/certificate/CertificateViewerModal.tsx` | ดูใบรับรอง |
 | `src/components/passport/PassportView.tsx` | Passport view |
-| `src/app/login/page.tsx` | หน้า Login |
-| `src/app/auth/callback/route.tsx` | OAuth callback |
 
 ---
 
-## 🎯 แผนงานถัดไป (Roadmap 1)
+## 🎯 สิ่งที่ต้องทำต่อ
 
-### Phase 1: Deployment & Auth (สัปดาห์นี้)
-- [x] ตั้งค่า Vercel ENV
-- [x] Deploy บน Vercel
-- [ ] Fix OAuth Google Login
-- [ ] ทดสอบ Login สำเร็จ
+### Phase 3: ทดสอบ Full Flow
+- [ ] ทดสอบ Login สำเร็จ → Home แสดงผลถูกต้อง
+- [ ] ตรวจสอบว่าสร้างบ้านอัตโนมัติ (First Time User)
+- [ ] เพิ่มสัตว์เลี้ยงตัวแรก (สร้าง Pet Passport)
+- [ ] บันทึก Life Journey เหตุการณ์แรก
+- [ ] ทดสอบ Flip Card Certificate Viewer
+- [ ] ทดสอบ QR Invite Modal
+- [ ] ทดสอบ Family Members Modal
 
-### Phase 2: Passport & Certificate (สัปดาห์หน้า)
-- [ ] ทดสอบสร้าง Pet Passport
-- [ ] ทดสอบออก Digital Certificate
-- [ ] ทดสอบ Flip Card Viewer
-- [ ] ทดสอบ Home Mode ครบทุกฟีเจอร์
+### Phase 4: Deploy & Polish
+- [ ] Login Vercel แล้ว run `vercel --prod`
+- [ ] ตรวจสอบ error logs บน Vercel
+- [ ] ทดสอบ Mobile responsiveness
+- [ ] ปรับปรุง Loading states
 
-### Phase 3: Life Journey (สัปดาห์ถัดไป)
-- [ ] สร้าง Moment ใหม่
-- [ ] ดู Timeline
-- [ ] Like & Comment
-- [ ] กรองตามหมวดหมู่
+### Phase 5: ฟีเจอร์เพิ่มเติม
+- [ ] Life Journey - สร้าง/ดู/แก้ไข/ลบ เหตุการณ์
+- [ ] Timeline sorting และ empty/loading/error states
+- [ ] RLS verification กับ owner และ authenticated user ต่างกัน
+- [ ] Dynamic QR Token
+- [ ] Notification ที่มีคุณค่า
 
 ---
 
@@ -154,6 +124,7 @@ https://tnshkncxfzkmmrmbepyb.supabase.co/auth/v1/callback
 - **GitHub:** [Meow World Repository](https://github.com/BombINdyBoy/Meow-World)
 - **Vercel:** [Dashboard](https://vercel.com/dashboard)
 - **Supabase:** [Dashboard](https://app.supabase.com)
+- **App URL:** https://meow-world-heart-edition.vercel.app
 
 ---
 
@@ -162,9 +133,10 @@ https://tnshkncxfzkmmrmbepyb.supabase.co/auth/v1/callback
 1. **รัน `npm run build` ก่อน push เสมอ** เพื่อเช็ค error
 2. **อย่า commit `.env.local`** ใช้ `.env.local.example` แทน
 3. **รัน `npm run lint`** เพื่อเช็ค code style
+4. **`createClient()` ต้องอยู่ใน `useEffect`** ใน Next.js 16 เพื่อหลีกเลี่ยง prerender error
 
 ---
 
 **สร้างโดย:** Codebuff AI Assistant  
-**วันที่:** 28 สิงหาคม 2026  
+**อัปเดตล่าสุด:** 30 สิงหาคม 2026  
 **เวอร์ชัน:** Meow World V4.1 Heart Edition

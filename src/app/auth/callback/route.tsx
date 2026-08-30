@@ -56,7 +56,9 @@ export async function GET(request: NextRequest) {
 
     // Redirect to home page after successful authentication
     redirect('/')
-  } catch (error) {
+  } catch (error: any) {
+    // redirect() throws NEXT_REDIRECT internally - not a real error
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error
     console.error('[Auth Callback] Unexpected error:', error)
     redirect('/login?error=Unexpected error occurred')
   }

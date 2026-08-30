@@ -25,7 +25,22 @@ export function useRealtimeNotifications({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const supabase = createClient();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  type NotificationRow = {
+    id: string;
+    user_id: string;
+    family_id: string;
+    type: Notification['type'];
+    title: string;
+    message: string;
+    actor_name: string;
+    actor_avatar?: string | null;
+    ref_id?: string | null;
+    ref_type?: string | null;
+    is_read: boolean;
+    created_at: string;
+  };
 
   // Fetch initial notifications
   const fetchNotifications = useCallback(async () => {
@@ -38,7 +53,7 @@ export function useRealtimeNotifications({
       .limit(50);
 
     if (!error && data) {
-      const formatted: Notification[] = data.map((item: any) => ({
+      const formatted: Notification[] = (data as NotificationRow[]).map((item) => ({
         id: item.id,
         user_id: item.user_id,
         family_id: item.family_id,
@@ -46,9 +61,9 @@ export function useRealtimeNotifications({
         title: item.title,
         message: item.message,
         actor_name: item.actor_name,
-        actor_avatar: item.actor_avatar,
-        ref_id: item.ref_id,
-        ref_type: item.ref_type,
+        actor_avatar: item.actor_avatar ?? undefined,
+        ref_id: item.ref_id ?? undefined,
+        ref_type: item.ref_type ?? undefined,
         is_read: item.is_read,
         created_at: item.created_at,
       }));
@@ -62,7 +77,8 @@ export function useRealtimeNotifications({
     if (!userId || !familyId) return;
 
     // Fetch initial data
-    fetchNotifications();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchNotifications();
 
     // Subscribe to realtime changes on the notifications table
     const channel = supabase

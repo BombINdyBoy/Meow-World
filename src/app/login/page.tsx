@@ -1,11 +1,10 @@
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(searchParams.get("error"));
@@ -22,9 +21,10 @@ function LoginContent() {
         },
       });
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error:", error);
-      setError(error.message || "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      const message = error instanceof Error ? error.message : "เกิดข้อผิดพลาด กรุณาลองใหม่";
+      setError(message);
       setIsLoading(false);
     }
   };

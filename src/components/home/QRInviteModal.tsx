@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, QrCode, Copy, Check, Download, KeyRound, ArrowRight, Users } from 'lucide-react';
-import { Family, UserRole, UserProfile } from '@/types';
+import Image from 'next/image';
+import { X, Copy, Check, Download, KeyRound, ArrowRight, Users } from 'lucide-react';
+import { Family, UserRole } from '@/types';
 
 interface QRInviteModalProps {
   isOpen: boolean;
   onClose: () => void;
   family: Family;
-  createdBy: UserProfile;
   currentUserName: string;
   onJoinWithToken?: () => void;
 }
@@ -17,13 +17,11 @@ export const QRInviteModal: React.FC<QRInviteModalProps> = ({
   isOpen,
   onClose,
   family,
-  createdBy,
   currentUserName,
   onJoinWithToken,
 }) => {
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [role, setRole] = useState<UserRole>('editor');
-  const [expiresInDays, setExpiresInDays] = useState<number>(7);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [inputToken, setInputToken] = useState<string>('');
@@ -35,18 +33,19 @@ export const QRInviteModal: React.FC<QRInviteModalProps> = ({
   // สร้าง QR Code เมื่อเปิด Modal หรือเปลี่ยนแท็บ
   useEffect(() => {
     if (isOpen && activeTab === 'create') {
-      const tokenData = JSON.stringify({ 
-        familyId: family.id, 
-        token: inviteToken, 
+      const tokenData = JSON.stringify({
+        familyId: family.id,
+        token: inviteToken,
         role,
-        expires: expiresInDays 
+        expires: 7,
       });
-      
+
       // ใช้ API สาธารณะสร้าง QR Code
       const encodedData = encodeURIComponent(tokenData);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQrCodeDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodedData}`);
     }
-  }, [isOpen, activeTab, family.id, inviteToken, role, expiresInDays]);
+  }, [isOpen, activeTab, family.id, inviteToken, role]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(inviteToken);
@@ -131,14 +130,20 @@ export const QRInviteModal: React.FC<QRInviteModalProps> = ({
                   สวัสดี <span className="font-semibold text-gray-900">{currentUserName}</span>
                 </p>
                 <p className="text-xs text-gray-500">
-                  ชวนคนในครอบครัวมาร่วมสร้าง <span className="font-bold text-orange-600">"{family.name}"</span>
+                  ชวนคนในครอบครัวมาร่วมสร้าง <span className="font-bold text-orange-600">&quot;{family.name}&quot;</span>
                 </p>
               </div>
 
               {/* QR Code Display */}
               <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                 {qrCodeDataUrl ? (
-                  <img src={qrCodeDataUrl} alt="Invite QR" className="w-48 h-48 rounded-lg shadow-sm bg-white p-2 mb-4" />
+                  <Image
+                    src={qrCodeDataUrl}
+                    alt="Invite QR"
+                    width={192}
+                    height={192}
+                    className="w-48 h-48 rounded-lg shadow-sm bg-white p-2 mb-4"
+                  />
                 ) : (
                   <div className="w-48 h-48 bg-gray-200 animate-pulse rounded-lg mb-4"></div>
                 )}

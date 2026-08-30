@@ -12,8 +12,6 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export default function HomePage() {
   const router = useRouter();
-  const supabase = createClient();
-
   // Core States - Meow World Home Foundation
   const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +48,7 @@ export default function HomePage() {
 
   // 1. Initialize Home Experience on Mount
   useEffect(() => {
+    const supabase = createClient();
     async function initHomeExperience() {
       try {
         // ดึง Session ผู้ใช้ปัจจุบัน
@@ -107,8 +106,8 @@ export default function HomePage() {
           setUserRole('owner');
         }
 
-        // กำหนด View State ตามสถานะทางจิตวิทยา
-        setViewState(currentFamily && events.length > 0 ? 'living' : 'nesting');
+        // กำหนด View State - หลัง fetch เสร็จ  events จะถูก update แล้ว
+        // ใช้ 'nesting' เป็นค่าเริ่มต้น แล้ว useEffect ข้างล่างจะเช็คอีกครั้ง
       } catch (error) {
         console.error("Error initializing home experience:", error);
       } finally {
@@ -119,8 +118,16 @@ export default function HomePage() {
     initHomeExperience();
   }, []);
 
+  // Update viewState when events load (after async fetches complete)
+  useEffect(() => {
+    if (!isLoading && family) {
+      setViewState(events.length > 0 ? 'living' : 'nesting');
+    }
+  }, [events, family, isLoading]);
+
   // สร้างบ้านใหม่สำหรับผู้ใช้แรก
   async function createHomeForUser(user: any): Promise<Family> {
+    const supabase = createClient();
     const homeName = "บ้านของเรา";
     const displayName = user.user_metadata?.full_name || "เจ้าของบ้าน";
 
@@ -153,6 +160,7 @@ export default function HomePage() {
 
   // Fetch Members (Co-owners)
   async function fetchMembers(homeId: string) {
+    const supabase = createClient();
     const { data, error } = await supabase
       .from("home_members")
       .select("user_id, role, joined_at, profiles(display_name, avatar_url)")
@@ -174,6 +182,7 @@ export default function HomePage() {
 
   // Fetch Pets in this Home
   async function fetchPets(homeId: string) {
+    const supabase = createClient();
     // TODO: ใช้ pet_shares table เพื่อหา pets ที่แชร์ในบ้านนี้
     // ตอนนี้ดึง pets ทั้งหมดของผู้ใช้ที่เป็น owner หรือ editor
     const { data: { user } } = await supabase.auth.getUser();
@@ -192,6 +201,7 @@ export default function HomePage() {
 
   // Fetch Life Journey Events
   async function fetchEvents(homeId: string) {
+    const supabase = createClient();
     const { data, error } = await supabase
       .from("life_journey_events")
       .select("*")
@@ -239,6 +249,7 @@ export default function HomePage() {
   }) => {
     if (!family || !currentUser) return;
 
+    const supabase = createClient();
     try {
       const { data: newEvent, error } = await supabase
         .from("life_journey_events")
@@ -310,6 +321,7 @@ export default function HomePage() {
   const handleDeleteEvent = async (eventId: string) => {
     if (!confirm('คุณต้องการลบเรื่องราวนี้หรือไม่?')) return;
     
+    const supabase = createClient();
     const { error } = await supabase
       .from("life_journey_events")
       .delete()
@@ -433,7 +445,7 @@ export default function HomePage() {
             onClose={() => setIsMembersModalOpen(false)}
             family={family}
             members={members}
-            currentUser={session.user}
+            currentUser={currentUser}
             userRole={userRole}
             onUpdateRole={() => {}}
             onRemoveMember={() => {}}
@@ -445,9 +457,8 @@ export default function HomePage() {
             isOpen={isQRModalOpen}
             onClose={() => setIsQRModalOpen(false)}
             family={family}
-            createdBy={currentUser}
             currentUserName={currentUser.displayName}
-            onJoinWithToken={() => true}
+            onJoinWithToken={() => {}}
           />
         </>
       )}

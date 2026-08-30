@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Pet, LifeJourneyEvent, LifeJourneyEventFormData } from '@/types/pet';
 import { format } from 'date-fns';
@@ -28,14 +28,10 @@ export default function PetDetailPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchPetData();
-  }, [petId]);
-
-  async function fetchPetData() {
+  const fetchPetData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       const { data: petData, error: petError } = await supabase
         .from('pets')
         .select('*')
@@ -53,12 +49,18 @@ export default function PetDetailPage() {
 
       if (eventsError) throw eventsError;
       setEvents(eventsData || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'ไม่สามารถโหลดข้อมูลสัตว์เลี้ยงได้';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [petId, supabase]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchPetData();
+  }, [fetchPetData]);
 
   async function handleAddEvent(data: LifeJourneyEventFormData) {
     try {
@@ -75,8 +77,9 @@ export default function PetDetailPage() {
 
       setShowEventForm(false);
       fetchPetData();
-    } catch (err: any) {
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการเพิ่มเหตุการณ์';
+      alert(`เกิดข้อผิดพลาด: ${message}`);
     } finally {
       setSubmitting(false);
     }
@@ -94,8 +97,9 @@ export default function PetDetailPage() {
       if (error) throw error;
 
       fetchPetData();
-    } catch (err: any) {
-      alert(`เกิดข้อผิดพลาด: ${err.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการลบเหตุการณ์';
+      alert(`เกิดข้อผิดพลาด: ${message}`);
     }
   }
 
