@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -8,16 +8,25 @@ import { useRouter } from "next/navigation";
 interface Pet {
   id: string;
   name: string;
+  species: string;
   breed?: string | null;
-  avatar_url?: string | null;
+  birth_date?: string | null;
+  weight?: number | null;
 }
 
-interface Moment {
+interface JourneyEvent {
   id: string;
-  content: string;
-  created_at: string;
-  author_name: string;
-  media_urls?: string[] | null;
+  pet_id: string;
+  event_date: string;
+  event_type: string;
+  title: string;
+  description?: string | null;
+}
+
+interface Family {
+  id: string;
+  name: string;
+  owner_id: string;
 }
 
 export default function HomePage() {
@@ -25,99 +34,133 @@ export default function HomePage() {
   const supabase = createClient();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [homeName, setHomeName] = useState("บ้านของเรา");
-  const [homeId, setHomeId] = useState<string | null>(null);
-  
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [family, setFamily] = useState<Family | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
-  const [moments, setMoments] = useState<Moment[]>([]);
-  
-  // View Modes: 'empty' (ไม่มีอะไร), 'nesting' (มีบ้านรอแมว), 'living' (มีครบ)
+  const [events, setEvents] = useState<JourneyEvent[]>([]);
+
+  // View Modes
   const [viewMode, setViewMode] = useState<"empty" | "nesting" | "living">("empty");
 
-  useEffect(() => {
-    async function initData() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push("/login");
-          return;
-        }
+  const loadData = useCallback(async () => {
+    if (!user) return;
 
-        // 1. ดึงข้อมูลสมาชิกและบ้าน
-        const { data: memberData, error: memberError } = await supabase
-          .from("home_members")
-          .select(`
-            homes (id, name),
-            pets (id, name, breed, avatar_url)
-          `)
-          .eq("user_id", session.user.id)
+    try {
+      // 1. ดึง family ที่ user เป็น owner หรือ member
+      const { data: ownedFamilies } = await supabase
+        .from("families")
+        .select("id, name, owner_id")
+        .eq("owner_id", user.id)
+        .limit(1);
+
+      const { data: memberFamilies } = await supabase
+        .from("family_members")
+        .select("family_id, families(id, name, owner_id)")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      let currentFamily: Family | null = null;
+
+      if (ownedFamilies && ownedFamilies.length > 0) {
+        currentFamily = ownedFamilies[0] as Family;
+      } else if (memberFamilies && memberFamilies.length > 0) {
+        const fam = memberFamilies[0] as any;
+        currentFamily = fam.families as Family;
+      }
+
+      if (!currentFamily) {
+        // ยังไม่มี family -> สร้างใหม่
+        const { data: newFamily } = await supabase
+          .from("families")
+          .insert({ name: "บ้านของเรา", owner_id: user.id })
+          .select()
           .single();
 
-        if (memberError || !memberData) {
-          // ถ้าไม่มีข้อมูลเลย -> สร้างบ้านใหม่
-          await createHome(session.user);
-          setViewMode("empty"); 
-          // Note: หลังสร้างบ้านเสร็จ อาจต้อง reload 1 ครั้งเพื่อให้ข้อมูลมา แต่เพื่อความง่ายเราจะให้ user กดปุ่มสร้างเองในขั้นตอนนี้หรือทำ Auto-reload ในขั้นสูง
-          // สำหรับตอนนี้ให้แสดงหน้าว่างไปก่อน
-          setHomeName("บ้านหลังใหม่ของคุณ");
-          setIsLoading(false);
-          return;
+        if (newFamily) {
+          // เพิ่มตัวเองเป็น owner ใน family_members
+          await supabase.from("family_members").insert({
+            family_id: newFamily.id,
+            user_id: user.id,
+            role: "owner",
+          });
+          currentFamily = newFamily as Family;
         }
-
-        // 2. จัดการข้อมูลบ้าน (TypeScript Safe)
-        const home = Array.isArray(memberData.homes) ? memberData.homes[0] : memberData.homes;
-        
-        if (home) {
-          setHomeId(home.id);
-          setHomeName(home.name || "บ้านของเรา");
-
-          // 3. จัดการข้อมูลสัตว์เลี้ยง (TypeScript Safe)
-          const petsList = Array.isArray(memberData.pets) ? memberData.pets : (memberData.pets ? [memberData.pets] : []);
-          setPets(petsList as Pet[]);
-
-          if (petsList.length > 0) {
-            // มีแมวแล้ว -> โหลดเรื่องราว
-            setViewMode("living"); // ตั้งค่าเริ่มต้นเป็น living ก่อน
-            
-            const { data: momentsData } = await supabase
-              .from("life_journey_events")
-              .select("*")
-              .eq("home_id", home.id)
-              .order("created_at", { ascending: false })
-              .limit(10);
-
-            if (momentsData && momentsData.length > 0) {
-              setMoments(momentsData as Moment[]);
-              setViewMode("living");
-            } else {
-              setViewMode("nesting"); // มีแมวแต่ยังไม่มีเรื่องราว
-            }
-          } else {
-            setViewMode("nesting"); // มีบ้านแต่ยังไม่มีแมว
-          }
-        } else {
-          setViewMode("empty");
-        }
-
-      } catch (error) {
-        console.error("Init Error:", error);
-        setViewMode("empty");
-      } finally {
-        setIsLoading(false);
       }
-    }
 
-    initData();
+      setFamily(currentFamily);
+
+      if (!currentFamily) {
+        setViewMode("empty");
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. ดึง pets ที่ user เป็นเจ้าของ หรือ share ผ่าน family
+      const { data: ownedPets } = await supabase
+        .from("pets")
+        .select("id, name, species, breed, birth_date, weight")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false });
+
+      const { data: sharedPets } = await supabase
+        .from("pet_shares")
+        .select("pets(id, name, species, breed, birth_date, weight)")
+        .eq("family_id", currentFamily.id);
+
+      const allPets: Pet[] = [
+        ...(ownedPets || []),
+        ...((sharedPets || []).map((s: any) => s.pets).filter(Boolean)),
+      ];
+
+      // Remove duplicates by id
+      const uniquePets = allPets.filter(
+        (pet, index, self) => index === self.findIndex((p) => p.id === pet.id)
+      );
+
+      setPets(uniquePets);
+
+      if (uniquePets.length === 0) {
+        setViewMode("nesting");
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. ดึง events สำหรับ pets ทั้งหมด
+      const petIds = uniquePets.map((p) => p.id);
+      const { data: eventsData } = await supabase
+        .from("life_journey_events")
+        .select("id, pet_id, event_date, event_type, title, description")
+        .in("pet_id", petIds)
+        .order("event_date", { ascending: false })
+        .limit(10);
+
+      setEvents((eventsData as JourneyEvent[]) || []);
+      setViewMode("living");
+    } catch (error) {
+      console.error("Init Error:", error);
+      setViewMode("empty");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    async function initAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+      setUser({ id: session.user.id, email: session.user.email });
+    }
+    initAuth();
   }, []);
 
-  // ฟังก์ชันสร้างบ้าน (เรียกเมื่อไม่มีข้อมูล)
-  const createHome = async (user: any) => {
-    const newHome = { name: "บ้านของเรา", owner_id: user.id };
-    const { data, error } = await supabase.from("homes").insert(newHome).select().single();
-    if (!error && data) {
-      await supabase.from("home_members").insert({ home_id: data.id, user_id: user.id, role: "owner" });
-    }
-  };
+  useEffect(() => {
+    if (user) loadData();
+  }, [user, loadData]);
+
+  // --- RENDER ---
 
   if (isLoading) {
     return (
@@ -130,16 +173,16 @@ export default function HomePage() {
     );
   }
 
-  // --- RENDER ตาม Mode ---
-
-  // 1. Empty / Need Setup
-  if (viewMode === "empty" || !homeId) {
+  // 1. Empty
+  if (viewMode === "empty" || !family) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">ยินดีต้อนรับสู่ Meow World</h1>
           <p className="text-gray-500 mb-6">ระบบกำลังเตรียมพื้นที่ส่วนตัวให้คุณ...</p>
-          <button onClick={() => window.location.reload()} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">รีเฟรชหน้าจอ</button>
+          <button onClick={() => window.location.reload()} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">
+            รีเฟรชหน้าจอ
+          </button>
         </div>
       </div>
     );
@@ -149,32 +192,31 @@ export default function HomePage() {
   if (viewMode === "nesting") {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-        {/* Background Decor */}
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-           <div className="absolute top-10 left-10 text-6xl">🐾</div>
-           <div className="absolute bottom-20 right-10 text-6xl">🧶</div>
+          <div className="absolute top-10 left-10 text-6xl">🐾</div>
+          <div className="absolute bottom-20 right-10 text-6xl">🧶</div>
         </div>
 
         <div className="relative z-10 max-w-md w-full bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-lg border border-white">
           <div className="text-7xl mb-6 animate-bounce">📦</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{homeName}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{family.name}</h1>
           <p className="text-gray-600 mb-8 leading-relaxed">
-            บ้านหลังใหม่พร้อมแล้ว!<br/>
+            บ้านหลังใหม่พร้อมแล้ว!<br />
             มาต้อนรับสมาชิกขนฟูคนแรกกันเถอะ
           </p>
-          
-          <button 
-            onClick={() => alert("เปิดหน้าเพิ่มสัตว์เลี้ยง (กำลังพัฒนา)")}
+
+          <button
+            onClick={() => router.push("/pets")}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition transform hover:scale-[1.02] flex items-center justify-center gap-3 text-lg"
           >
             <span>🐱</span> รับน้องเข้าบ้าน
           </button>
-          
-          <button 
-             onClick={() => alert("เปิดหน้าเชิญสมาชิก (กำลังพัฒนา)")}
-             className="mt-4 text-gray-500 hover:text-gray-800 font-medium text-sm underline decoration-dashed"
+
+          <button
+            onClick={() => router.push("/pets")}
+            className="mt-4 text-gray-500 hover:text-gray-800 font-medium text-sm underline decoration-dashed"
           >
-            หรือ ชวนคนในบ้านมาร่วมสร้าง
+            หรือ ดู Passport ทั้งหมด
           </button>
         </div>
       </div>
@@ -188,8 +230,10 @@ export default function HomePage() {
       <header className="bg-white px-6 pt-12 pb-6 shadow-sm sticky top-0 z-10">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{homeName}</h1>
-            <p className="text-sm text-gray-500">{pets.length} สมาชิกขนฟู • {moments.length} เรื่องราว</p>
+            <h1 className="text-2xl font-bold text-gray-900">{family.name}</h1>
+            <p className="text-sm text-gray-500">
+              {pets.length} สมาชิกขนฟู • {events.length} เรื่องราว
+            </p>
           </div>
           <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-xl">🏠</div>
         </div>
@@ -201,64 +245,100 @@ export default function HomePage() {
           <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
             <span>🐾</span> สมาชิกในบ้าน
           </h2>
-          <div className="flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
+          <div className="flex gap-4 overflow-x-auto pb-2">
             {pets.map((pet) => (
-              <div key={pet.id} className="flex-shrink-0 w-28 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-2 overflow-hidden flex items-center justify-center text-2xl">
-                  {pet.avatar_url ? "🖼️" : "🐱"}
+              <div
+                key={pet.id}
+                onClick={() => router.push(`/pets/${pet.id}`)}
+                className="flex-shrink-0 w-28 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 text-center cursor-pointer hover:shadow-md transition"
+              >
+                <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center text-2xl">
+                  🐱
                 </div>
                 <p className="font-bold text-gray-900 text-sm truncate">{pet.name}</p>
-                <p className="text-xs text-gray-500">{pet.breed || "แมวเหมียว"}</p>
+                <p className="text-xs text-gray-500">{pet.species}</p>
               </div>
             ))}
-            <button className="flex-shrink-0 w-28 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 hover:text-orange-500 transition">
+            <button
+              onClick={() => router.push("/pets")}
+              className="flex-shrink-0 w-28 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 hover:text-orange-500 transition"
+            >
               <span className="text-2xl mb-1">+</span>
               <span className="text-xs font-medium">เพิ่มน้อง</span>
             </button>
           </div>
         </section>
 
-        {/* Moments Feed */}
+        {/* Events Feed */}
         <section>
           <div className="flex justify-between items-end mb-3">
             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <span>✨</span> ความทรงจำล่าสุด
             </h2>
-            <button className="text-xs text-orange-600 font-medium hover:underline">ดูทั้งหมด</button>
+            <button
+              onClick={() => {
+                if (pets[0]) router.push(`/pets/${pets[0].id}`);
+              }}
+              className="text-xs text-orange-600 font-medium hover:underline"
+            >
+              ดูทั้งหมด
+            </button>
           </div>
-          
-          {moments.length === 0 ? (
-             <div className="bg-white p-8 rounded-2xl text-center border border-dashed border-gray-200">
-               <p className="text-gray-400 mb-4">ยังไม่มีเรื่องราวในบ้าน</p>
-               <button onClick={() => alert("เปิด Modal บันทึกเรื่องราว")} className="text-orange-600 font-bold text-sm hover:underline">เริ่มเขียนเรื่องแรก</button>
-             </div>
+
+          {events.length === 0 ? (
+            <div className="bg-white p-8 rounded-2xl text-center border border-dashed border-gray-200">
+              <p className="text-gray-400 mb-4">ยังไม่มีเรื่องราวในบ้าน</p>
+              <button
+                onClick={() => {
+                  if (pets[0]) router.push(`/pets/${pets[0].id}`);
+                }}
+                className="text-orange-600 font-bold text-sm hover:underline"
+              >
+                เริ่มเขียนเรื่องแรก
+              </button>
+            </div>
           ) : (
             <div className="space-y-4">
-              {moments.map((m) => (
-                <article key={m.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-xs font-bold text-green-700">M</div>
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">สมาชิกในบ้าน</p>
-                      <p className="text-xs text-gray-400">{new Date(m.created_at).toLocaleDateString('th-TH')}</p>
+              {events.map((event) => {
+                const pet = pets.find((p) => p.id === event.pet_id);
+                return (
+                  <article
+                    key={event.id}
+                    onClick={() => pet && router.push(`/pets/${pet.id}`)}
+                    className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-xs font-bold text-green-700">
+                        {pet?.name?.slice(0, 1).toUpperCase() || "?"}
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-gray-900">{event.title}</p>
+                        <p className="text-xs text-gray-400">
+                          {pet?.name} • {new Date(event.event_date).toLocaleDateString("th-TH")}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{m.content}</p>
-                  {m.media_urls && m.media_urls.length > 0 && (
-                    <div className="mt-3 h-32 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 text-sm">
-                      📷 รูปภาพ/วิดีโอ
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                        {event.event_type}
+                      </span>
                     </div>
-                  )}
-                </article>
-              ))}
+                    {event.description && (
+                      <p className="text-gray-600 text-sm leading-relaxed mt-1">{event.description}</p>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
       </main>
 
       {/* FAB Button */}
-      <button 
-        onClick={() => alert("เปิด Modal บันทึกเรื่องราว")}
+      <button
+        onClick={() => {
+          if (pets[0]) router.push(`/pets/${pets[0].id}`);
+        }}
         className="fixed bottom-6 right-6 w-14 h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition z-20"
       >
         <span className="text-3xl font-light">+</span>
