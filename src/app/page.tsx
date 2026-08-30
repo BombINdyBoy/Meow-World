@@ -30,7 +30,7 @@ export default function HomePage() {
           .single();
 
         if (members?.homes) {
-          setHomeName(members.homes.name || "บ้านของเรา");
+          setHomeName((members.homes as any[])?.[0]?.name || "บ้านของเรา");
           setHasPets(Array.isArray(members.pets) && members.pets.length > 0);
           // สมมติว่ามีสมาชิกอย่างน้อย 1 คนคือตัวเรา
           setHasMembers(true); 
