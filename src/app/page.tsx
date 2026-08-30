@@ -29,10 +29,11 @@ export default function HomePage() {
           .single();
 
         if (members?.homes) {
-          // แก้จุด Error: เข้าถึง homes ซึ่งเป็น object ไม่ใช่ array
-          setHomeName(members.homes.name || "บ้านของเรา");
+          // แก้ไขจุด Error: เข้าถึง homes อย่างปลอดภัย
+          const homeData = Array.isArray(members.homes) ? members.homes[0] : members.homes;
+          setHomeName(homeData?.name || "บ้านของเรา");
           
-          // เช็คว่ามี pets ไหม
+          // ตรวจสอบว่ามีสัตว์เลี้ยงหรือไม่
           const hasPetData = Array.isArray(members.pets) && members.pets.length > 0;
           setHasPets(hasPetData);
         } else {
@@ -40,7 +41,7 @@ export default function HomePage() {
         }
 
       } catch (error) {
-        console.error("Error loading home data:", error);
+        console.error("Error loading home:", error);
       } finally {
         setIsLoading(false);
       }
@@ -59,7 +60,7 @@ export default function HomePage() {
     );
   }
 
-  // กรณีไม่มีสัตว์เลี้ยง (Nesting Mode)
+  // กรณีที่ 1: ยังไม่มีสัตว์เลี้ยง (Nesting Mode)
   if (!hasPets) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
@@ -72,14 +73,14 @@ export default function HomePage() {
         </p>
         
         <button 
-          onClick={() => router.push('/pets/create')} 
+          onClick={() => alert("ฟังก์ชันรับน้องเข้าบ้าน (กำลังพัฒนา)")}
           className="w-full max-w-xs bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-3"
         >
           <span className="text-2xl">🐱</span> รับน้องเข้าบ้าน
         </button>
         
         <button 
-          onClick={() => alert("ฟีเจอร์เชิญเพื่อน กำลังเร็วๆ นี้")}
+          onClick={() => alert("ฟังก์ชันเชิญเพื่อน (กำลังพัฒนา)")}
           className="mt-4 text-blue-600 font-medium hover:underline text-sm"
         >
           หรือ ชวนคนในบ้านมาร่วมสร้าง
@@ -88,7 +89,7 @@ export default function HomePage() {
     );
   }
 
-  // กรณีมีสัตว์เลี้ยงแล้ว (Living Mode)
+  // กรณีที่ 2: มีสัตว์เลี้ยงแล้ว (Living Mode)
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="mb-6">
