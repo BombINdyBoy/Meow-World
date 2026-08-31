@@ -20,9 +20,32 @@ export default function PetsPage() {
     const supabase = createClient();
     try {
       setLoading(true);
+
+      // Get user's home first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('ไม่พบข้อมูลผู้ใช้');
+        return;
+      }
+
+      const { data: homes } = await supabase
+        .from('homes')
+        .select('id')
+        .eq('owner_id', user.id)
+        .limit(1);
+
+      if (!homes || homes.length === 0) {
+        setPets([]);
+        return;
+      }
+
+      const homeId = homes[0].id;
+
+      // Fetch pets for this home
       const { data, error } = await supabase
         .from('pets')
         .select('*')
+        .eq('home_id', homeId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -44,13 +67,24 @@ export default function PetsPage() {
     const supabase = createClient();
     try {
       setSubmitting(true);
-      
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('ไม่พบข้อมูลผู้ใช้');
 
+      // Get user's home
+      const { data: homes } = await supabase
+        .from('homes')
+        .select('id')
+        .eq('owner_id', user.id)
+        .limit(1);
+
+      if (!homes || homes.length === 0) {
+        throw new Error('ไม่พบบ้าน กรุณาสร้างบ้านก่อน');
+      }
+
       const { error } = await supabase.from('pets').insert({
         ...data,
-        owner_id: user.id,
+        home_id: homes[0].id,
       });
 
       if (error) throw error;

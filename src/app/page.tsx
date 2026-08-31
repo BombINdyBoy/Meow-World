@@ -10,7 +10,7 @@ interface Pet {
   name: string;
   species: string;
   breed?: string | null;
-  birth_date?: string | null;
+  nickname?: string | null;
   avatar_url?: string | null;
 }
 
@@ -47,26 +47,17 @@ export default function HomePage() {
     if (!user) return;
 
     try {
-      // 1. ดึง home ที่ user เป็น owner หรือ member
+      // 1. ดึง home ที่ user เป็น owner
       const { data: ownedHomes } = await supabase
         .from("homes")
         .select("id, name, owner_id")
         .eq("owner_id", user.id)
         .limit(1);
 
-      const { data: memberHomes } = await supabase
-        .from("home_members")
-        .select("home_id, homes(id, name, owner_id)")
-        .eq("user_id", user.id)
-        .limit(1);
-
       let currentHome: Home | null = null;
 
       if (ownedHomes && ownedHomes.length > 0) {
         currentHome = ownedHomes[0] as Home;
-      } else if (memberHomes && memberHomes.length > 0) {
-        const h = memberHomes[0] as any;
-        currentHome = h.homes as Home;
       }
 
       if (!currentHome) {
@@ -78,6 +69,7 @@ export default function HomePage() {
           .single();
 
         if (newHome) {
+          // Add self as owner in home_members
           await supabase.from("home_members").insert({
             home_id: newHome.id,
             user_id: user.id,
@@ -98,7 +90,7 @@ export default function HomePage() {
       // 2. ดึง pets ที่อยู่ใน home นี้
       const { data: petsData } = await supabase
         .from("pets")
-        .select("id, name, species, breed, birth_date, avatar_url")
+        .select("id, name, species, breed, nickname, avatar_url")
         .eq("home_id", currentHome.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
@@ -290,6 +282,10 @@ export default function HomePage() {
             <div className="space-y-4">
               {events.map((event) => {
                 const pet = pets.find((p) => p.id === event.pet_id);
+                // Parse content to extract title
+                const contentLines = (event.content || "").split("\n");
+                const title = contentLines[0] || "ความทรงจำ";
+
                 return (
                   <article
                     key={event.id}
@@ -311,8 +307,8 @@ export default function HomePage() {
                         {event.event_type}
                       </span>
                     </div>
-                    {event.content && (
-                      <p className="text-gray-600 text-sm leading-relaxed mt-1">{event.content}</p>
+                    {title && (
+                      <p className="text-gray-600 text-sm leading-relaxed mt-1">{title}</p>
                     )}
                   </article>
                 );

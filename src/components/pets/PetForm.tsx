@@ -14,9 +14,11 @@ export function PetForm({ pet, onSubmit, onCancel, isLoading = false }: PetFormP
   const [formData, setFormData] = useState<PetFormData>({
     name: pet?.name || '',
     species: pet?.species || '',
+    nickname: pet?.nickname || '',
     breed: pet?.breed || '',
+    gender: pet?.gender || '',
     birth_date: pet?.birth_date ? pet.birth_date.substring(0, 10) : '',
-    weight: pet?.weight || undefined,
+    color: pet?.color || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,6 +40,20 @@ export function PetForm({ pet, onSubmit, onCancel, isLoading = false }: PetFormP
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="เช่น เจ้าดำ, มิ้วมิ้ว"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
+          ชื่อเล่น
+        </label>
+        <input
+          type="text"
+          id="nickname"
+          value={formData.nickname}
+          onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="เช่น มิ้ว, ดำ"
         />
       </div>
 
@@ -70,6 +86,39 @@ export function PetForm({ pet, onSubmit, onCancel, isLoading = false }: PetFormP
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+            เพศ
+          </label>
+          <select
+            id="gender"
+            value={formData.gender}
+            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">เลือกเพศ</option>
+            <option value="Male">ผู้ชาย</option>
+            <option value="Female">ผู้หญิง</option>
+            <option value="Unknown">ไม่ทราบ</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-1">
+            สี
+          </label>
+          <input
+            type="text"
+            id="color"
+            value={formData.color}
+            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="เช่น ดำ, ขาว, สามสี"
+          />
+        </div>
+      </div>
+
       <div>
         <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700 mb-1">
           วันเกิด
@@ -80,22 +129,6 @@ export function PetForm({ pet, onSubmit, onCancel, isLoading = false }: PetFormP
           value={formData.birth_date}
           onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-          น้ำหนัก (กก.)
-        </label>
-        <input
-          type="number"
-          id="weight"
-          step="0.01"
-          min="0"
-          value={formData.weight}
-          onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) || undefined })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="เช่น 4.5"
         />
       </div>
 

@@ -41,11 +41,12 @@ export default function PetDetailPage() {
       if (petError) throw petError;
       setPet(petData);
 
+      // Query life_journey_events using created_at for ordering
       const { data: eventsData, error: eventsError } = await supabase
         .from('life_journey_events')
         .select('*')
         .eq('pet_id', petId)
-        .order('event_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (eventsError) throw eventsError;
       setEvents(eventsData || []);
@@ -66,11 +67,35 @@ export default function PetDetailPage() {
     try {
       setSubmitting(true);
 
+      // Get user's home_id for the event
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('ไม่พบข้อมูลผู้ใช้');
+
+      const { data: homes } = await supabase
+        .from('homes')
+        .select('id')
+        .eq('owner_id', user.id)
+        .limit(1);
+
+      if (!homes || homes.length === 0) {
+        throw new Error('ไม่พบบ้าน');
+      }
+
+      // Map form data to DB fields
+      // title + description → content field
+      // event_date is stored as metadata in content or just use created_at
+      const contentParts: string[] = [];
+      if (data.title) contentParts.push(data.title);
+      if (data.description) contentParts.push(data.description);
+
       const { error } = await supabase
         .from('life_journey_events')
         .insert({
-          ...data,
           pet_id: petId,
+          home_id: homes[0].id,
+          author_id: user.id,
+          event_type: data.event_type,
+          content: contentParts.join('\n'),
         });
 
       if (error) throw error;
@@ -149,6 +174,18 @@ export default function PetDetailPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+            {pet.nickname && (
+              <div>
+                <p className="text-sm text-gray-500">ชื่อเล่น</p>
+                <p className="font-medium">{pet.nickname}</p>
+              </div>
+            )}
+            {pet.gender && (
+              <div>
+                <p className="text-sm text-gray-500">เพศ</p>
+                <p className="font-medium">{pet.gender}</p>
+              </div>
+            )}
             {pet.birth_date && (
               <div>
                 <p className="text-sm text-gray-500">วันเกิด</p>
@@ -157,22 +194,16 @@ export default function PetDetailPage() {
                 </p>
               </div>
             )}
-            {pet.weight && (
+            {pet.color && (
               <div>
-                <p className="text-sm text-gray-500">น้ำหนัก</p>
-                <p className="font-medium">{pet.weight} กก.</p>
+                <p className="text-sm text-gray-500">สี</p>
+                <p className="font-medium">{pet.color}</p>
               </div>
             )}
             <div>
               <p className="text-sm text-gray-500">สร้างเมื่อ</p>
               <p className="font-medium">
                 {format(new Date(pet.created_at), 'd MMM yyyy', { locale: th })}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">อัปเดตล่าสุด</p>
-              <p className="font-medium">
-                {format(new Date(pet.updated_at), 'd MMM yyyy HH:mm', { locale: th })}
               </p>
             </div>
           </div>
@@ -210,6 +241,11 @@ export default function PetDetailPage() {
             <div className="space-y-4">
               {events.map((event) => {
                 const eventType = EVENT_TYPES.find(e => e.value === event.event_type);
+                // Parse content to extract title and description
+                const contentLines = (event.content || '').split('\n');
+                const title = contentLines[0] || 'ไม่มีหัวข้อ';
+                const description = contentLines.slice(1).join('\n') || null;
+
                 return (
                   <div
                     key={event.id}
@@ -222,12 +258,12 @@ export default function PetDetailPage() {
                             {eventType?.label || event.event_type}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {format(new Date(event.event_date), 'd MMM yyyy', { locale: th })}
+                            {format(new Date(event.created_at), 'd MMM yyyy', { locale: th })}
                           </span>
                         </div>
-                        <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                        {event.description && (
-                          <p className="text-gray-600 mt-1">{event.description}</p>
+                        <h4 className="font-semibold text-gray-900">{title}</h4>
+                        {description && (
+                          <p className="text-gray-600 mt-1">{description}</p>
                         )}
                       </div>
                       <button
@@ -355,7 +391,7 @@ function calculateAge(birthDate: string): string {
   const now = new Date();
   const years = now.getFullYear() - birth.getFullYear();
   const months = now.getMonth() - birth.getMonth();
-  
+
   if (years > 0) {
     return `${years} ปี`;
   } else if (months > 0) {
