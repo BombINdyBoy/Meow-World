@@ -8,6 +8,7 @@ import { th } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
 import { ShareButton } from '@/components/qr/ShareButton';
 import { TokenList } from '@/components/qr/TokenList';
+import { ProgressivePassport } from '@/components/passport/ProgressivePassport';
 
 const EVENT_TYPES = [
   { value: 'medical', label: 'การรักษาพยาบาล', color: 'bg-red-100 text-red-800' },
@@ -28,6 +29,7 @@ export default function PetDetailPage() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showTokens, setShowTokens] = useState(false);
+  const [showPassport, setShowPassport] = useState(false);
 
   const supabase = createClient();
 
@@ -169,6 +171,12 @@ export default function PetDetailPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={() => setShowPassport(true)}
+                className="px-4 py-2 bg-gradient-to-r from-[#1F1E1D] to-[#2D2A26] text-white rounded-md hover:opacity-90 text-sm font-bold"
+              >
+                📋 Passport
+              </button>
               <ShareButton petId={petId} petName={pet.name} />
               <button
                 onClick={() => setShowTokens(true)}
@@ -296,6 +304,11 @@ export default function PetDetailPage() {
       {/* Token List Modal */}
       {showTokens && (
         <TokenList petId={petId} onClose={() => setShowTokens(false)} />
+      )}
+
+      {/* Progressive Passport Modal */}
+      {showPassport && (
+        <ProgressivePassport petId={petId} onClose={() => setShowPassport(false)} />
       )}
     </div>
   );
