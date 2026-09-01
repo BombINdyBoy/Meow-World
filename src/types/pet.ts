@@ -14,6 +14,15 @@ export interface Pet {
   // Optional fields added via migration
   weight?: number | null;
   updated_at?: string | null;
+  // Litter/parent fields
+  litter_id?: string | null;
+  mother_id?: string | null;
+  father_id?: string | null;
+  birth_weight?: number | null;
+  birth_time?: string | null;
+  observed_at?: string | null;
+  special_traits?: string[] | null;
+  pet_code?: string | null;
 }
 
 export interface PetFormData {
@@ -48,4 +57,44 @@ export interface LifeJourneyEventFormData {
   event_type: string;
   title: string;
   description?: string;
+}
+
+// === Litter / Birth Event Types ===
+
+export interface Litter {
+  id: string;
+  home_id: string;
+  name: string;
+  birth_date?: string | null;
+  location?: string | null;
+  notes?: string | null;
+  mother_id?: string | null;
+  father_id?: string | null;
+  mother_name?: string | null;
+  father_name?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LitterFormData {
+  name: string;
+  birth_date: string;
+  location: string;
+  notes?: string;
+  mother_id?: string | null;
+  father_id?: string | null;
+  mother_name?: string;
+  father_name?: string;
+}
+
+export interface BabyData {
+  name: string;
+  nickname?: string;
+  gender?: string;
+  breed?: string;
+  color?: string;
+  birth_weight?: number;
+  special_traits?: string[];
+  birth_date_override?: string; // if different from litter default
 }

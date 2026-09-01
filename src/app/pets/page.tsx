@@ -166,12 +166,20 @@ export default function PetsPage() {
             <p className="text-gray-600 mt-1">จัดการข้อมูลสัตว์เลี้ยงของคุณ</p>
           </div>
           {!showForm && !editingPet && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              + เพิ่มสัตว์เลี้ยง
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => router.push('/pets/birth')}
+                className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
+              >
+                🐣 บันทึกการเกิด
+              </button>
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                + เพิ่มสัตว์เลี้ยง
+              </button>
+            </div>
           )}
         </div>
 
