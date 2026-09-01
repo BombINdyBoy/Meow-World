@@ -3,7 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import {
+  validateToken,
+  type TokenInfo,
+  type TokenContext,
+  type TokenValidationResult,
+  CONTEXT_DISPLAY,
+} from '@/lib/token-validation';
 
+/** Shape of token data used in the adopt page (flattened from API response) */
 interface QRTokenData {
   id: string;
   pet_id: string;
@@ -43,47 +51,43 @@ export default function AdoptPage() {
   const [homeName, setHomeName] = useState('บ้านของเรา');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Check session and load token data
+  // Check session and load token data via Validation API
   useEffect(() => {
     async function init() {
       try {
-        // Check if token exists and is valid
-        const { data: tokenInfo, error: tokenError } = await supabase
-          .from('qr_tokens')
-          .select(`
-            *,
-            pet:pets(id, name, species, breed, avatar_url),
-            sender:profiles!sender_id(id, display_name, avatar_url)
-          `)
-          .eq('id', token)
-          .single();
-
-        if (tokenError || !tokenInfo) {
-          setError('QR Token ไม่ถูกต้องหรือหมดอายุแล้ว');
-          setStep('error');
-          return;
-        }
-
-        if (tokenInfo.is_used) {
-          setError('QR Token นี้ถูกใช้ไปแล้ว');
-          setStep('error');
-          return;
-        }
-
-        // Check expiry
-        if (tokenInfo.expires_at && new Date(tokenInfo.expires_at) < new Date()) {
-          setError('QR Token หมดอายุแล้ว');
-          setStep('error');
-          return;
-        }
-
-        setTokenData(tokenInfo);
-
-        // Check if user is logged in
+        // Get current user (may be null if not logged in)
         const { data: { session } } = await supabase.auth.getSession();
-        
+        const userId = session?.user?.id;
+
         if (session) {
           setUser({ id: session.user.id, email: session.user.email });
+        }
+
+        // Validate token via centralized API (handles all 4 layers)
+        const result: TokenValidationResult = await validateToken(token, userId);
+
+        if (!result.valid || !result.token) {
+          setError(result.error?.message_th || 'QR Token ไม่ถูกต้อง');
+          setStep('error');
+          return;
+        }
+
+        // Map API response to local QRTokenData shape
+        const t = result.token;
+        setTokenData({
+          id: t.id,
+          pet_id: t.pet?.id || '',
+          sender_id: t.sender?.id || '',
+          context: t.context,
+          message: t.message,
+          is_used: false,
+          expires_at: t.expires_at,
+          created_at: t.created_at,
+          pet: t.pet || undefined,
+          sender: t.sender ? { ...t.sender, avatar_url: null } : undefined,
+        });
+
+        if (session) {
           setStep('preview');
         } else {
           setStep('login');

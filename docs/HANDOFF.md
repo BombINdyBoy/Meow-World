@@ -1,9 +1,96 @@
 # 🐱 Meow World — Team Handoff Document
 
 **Version:** Prototype V0 (ต้นแบบ)
-**Date:** 2026-08-31
+**Last Updated:** 2026-09-01
 **Branch:** `qwen-prototype-v0` (main branch สำหรับ development)
 **Repository:** https://github.com/BombINdyBoy/Meow-World
+**Production URL:** https://meow-world-heart-edition.vercel.app
+
+---
+
+## 📊 สถานะปัจจุบัน (อัพเดท: 1 กันยายน 2026)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Feature Status — 2026-09-01                           │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Core Features     ████████████████████░░░░  85%       │
+│  QR System         ██████████████████░░░░░░  75%       │
+│  Home Experience   ████████████████░░░░░░░░  70%       │
+│  Production Ready  ██████████████░░░░░░░░░░  65%       │
+│  Documentation     ████████████████████████  100%      │
+│                                                         │
+│  Overall Progress  ████████████████████░░░░  80%       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### สิ่งที่ทำเสร็จล่าสุด (1 กันยายน 2026)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Welcome Entry Screen** | ✅ | Storybook-style, interactive house |
+| **QR Scanner Modal** | ✅ | html5-qrcode, camera integration |
+| **Token Validation API** | ✅ | 4-Layer security model |
+| **Client-side Validation** | ✅ | Helper + QR parser |
+| **Design Spec Documents** | ✅ | 3 ฉบับ |
+| **Production Deploy** | ✅ | Vercel Production |
+| **Test Page** | ✅ | API testing tool |
+| **Product Vision** | ✅ | Core Philosophy & Design Principles |
+
+---
+
+## 🌟 Core Design Principles
+
+> **"Don't tell them what the world is. Let the world tell its own story."**
+> **"ให้ภาพมันเล่าเรื่อง"**
+
+### 10 หลักการออกแบบหลัก
+
+| # | Principle | Description |
+|---|-----------|-------------|
+| 1 | **Free First** | คุณค่าหลักต้องเข้าถึงได้โดยไม่สร้างกำแพง |
+| 2 | **Value Before Revenue** | สร้างคุณค่าให้ผู้ใช้ก่อน รายได้เป็นผลพลอยได้ |
+| 3 | **Visual First** | ให้ภาพและบริบทช่วยสื่อสารแทนข้อความ |
+| 4 | **Let the World Tell the Story** | "ให้ภาพมันเล่าเรื่อง" |
+| 5 | **Data Should Tell the Story** | ข้อมูลสะท้อนประวัติและพฤติกรรมจริง |
+| 6 | **Evaluate Privately** | ประเมินภายในโดยไม่เปิดเผยคะแนนดิบ |
+| 7 | **Rank Without Shaming** | การจัดอันดับไม่ควรทำให้รู้สึกด้อยกว่า |
+| 8 | **Preserve Credit** | ทุก Contribution ควรมีที่มาที่ไป |
+| 9 | **Real Life First** | ส่วนต่อขยายของชีวิตจริง ไม่ใช่สิ่งแทนชีวิตจริง |
+| 10 | **Memories Have Value** | คุณค่าเพราะวันหนึ่งอยากกลับมาดูอีกครั้ง |
+
+### Visual World Principle
+
+> **"ให้ภาพมันเล่าเรื่อง"**
+
+- ผู้ใช้ควรเข้าใจสถานะจากสิ่งที่มองเห็นได้
+- ไม่ต้องใช้ข้อความอธิบายทุกอย่าง
+- Progressive Information: แตะเพื่อดูรายละเอียดเพิ่มเติม
+
+### Life Journey = Core Concept
+
+> **Life Journey ไม่ควรเป็นเพียง Data Timeline แต่เป็น Story of a Life**
+
+- 🐣 วันแรก → 🏠 กลับบ้าน → 🧸 ของเล่น → 🏥 พบแพทย์ → 💉 วัคซีน
+- ข้อมูลสามารถสร้าง AI Story / Short Video ได้
+- Emotional Design: Flashback / Remembrance ไม่ใช่ "ระบบเศร้า"
+
+### Evaluation Philosophy
+
+> **Evaluate Privately. Rank Publicly. Explain Contextually.**
+
+- จำนวนข้อมูล ≠ คุณภาพ
+- ความถี่ ≠ ความใส่ใจ
+- รูปแบบข้อมูลบน Timeline = Quality Signal
+
+### Metaverse Philosophy
+
+> **Tamagotchi 4.0 with Real Life**
+
+- ไม่ใช่โลกที่ต้องเข้าไปอยู่ตลอดเวลา
+- แต่เป็นพื้นที่ที่กลับเข้าไปหาได้เมื่ออยากพบคน/สัตว์/ความทรงจำ
 
 ---
 
@@ -730,58 +817,40 @@ pets ──< life_journey_events (pet_id)
 
 ---
 
-## ⚠️ Known Issues (CRITICAL)
+## ⚠️ Known Issues
 
-### 1. `home_members` RLS Infinite Recursion
+### ✅ FIXED: `home_members` RLS Infinite Recursion
+
+**Status:** Fixed in previous session
 
 **Error:** `infinite recursion detected in policy for relation "home_members"`
 
-**Cause:** Original migration สร้าง policy ที่ query `home_members` ตัวเอง:
-```sql
--- ❌ Policy นี้ cause infinite recursion
-CREATE POLICY "Members can view members" ON public.home_members
-  FOR SELECT USING (
-    home_id IN (SELECT home_id FROM home_members WHERE user_id = auth.uid())
-  );
-```
+**วิธีแก้:** Drop policy ที่ self-reference แล้ว recreate ใหม่
 
-**Impact:** ไม่สามารถ query `homes`, `home_members`, `pets`, หรือ `life_journey_events` ผ่าน API ได้
+### ✅ FIXED: Home Page ติด Empty State
 
-**วิธีแก้:**
-```sql
--- Step 1: ดู policy ที่มีอยู่จริง
-SELECT * FROM pg_policies WHERE tablename = 'home_members';
+**Status:** Fixed in previous session
 
--- Step 2: Drop policy ที่ cause recursion (ใช้ชื่อจริงจาก step 1)
-DROP POLICY IF EXISTS "Members can view members" ON public.home_members;
+**Cause:** Query `homes` fail → setViewMode("empty") → loop
 
--- Step 3: Recreate ไม่มี self-reference
-CREATE POLICY "Users see own membership" ON public.home_members
-  FOR SELECT USING (user_id = auth.uid());
+**วิธีแก้:** ปรับ default viewMode เป็น "nesting" แทน "empty"
 
--- Step 4: Verify
-SELECT * FROM pg_policies WHERE tablename = 'home_members';
-```
+### 🔜 TODO: Google OAuth Redirect URI
 
-### 2. `handle_new_user()` Trigger ไม่ทำงาน
+**Status:** ต้องตั้งค่าบน Supabase
 
-**Cause:** User signup ก่อน apply migration
+**สิ่งที่ต้องทำ:**
+1. Supabase → Authentication → URL Configuration
+2. เพิ่ม Site URL: `https://meow-world-heart-edition.vercel.app`
+3. เพิ่ม Redirect URL: `https://meow-world-heart-edition.vercel.app/auth/callback`
 
-**Workaround:**
-```sql
-INSERT INTO public.profiles (id, display_name)
-VALUES ('USER_UUID_HERE', 'Display Name')
-ON CONFLICT (id) DO NOTHING;
-```
+### 🔜 TODO: Token Expiry Selector
 
-### 3. Home Page ติด Empty State
+**Status:** ยังไม่ทำ
 
-**Flow ที่เกิดขึ้น:**
-1. User login → session สำเร็จ
-2. Query `homes` → ❌ fail (RLS infinite recursion)
-3. Code จับ error → setViewMode("empty")
-4. แสดง "ยินดีต้อนรับสู่ Meow World"
-5. กด "รีเฟรช" → วน loop เดิม
+**Current:** Token หมดอายุ 7 วันอัตโนมัติ
+
+**Future:** ให้ผู้ใช้เลือก expiry (1 วัน, 7 วัน, 30 วัน, ไม่จำกัด)
 
 ---
 
@@ -851,45 +920,118 @@ Branch: qwen-prototype-v0 (development)
 - [x] Litter list page (birth history)
 - [x] Core V0 Addendum documentation
 
-### Phase 2A: Home Mode — Polish & UX 🔜 (ทำต่อ)
+### Phase 1C: QR Token System ✅ (ทำเสร็จแล้ว — 1 กันยายน 2026)
 
-- [ ] Welcome / Entry Screen — storybook-style Meow World (interactive house, asymmetrical layout, glass bottom nav)
-- [ ] Home page flow: empty → nesting → living (ทำงานได้จริง)
-- [ ] Pet avatars & photo upload
+- [x] Welcome / Entry Screen — storybook-style Meow World
+- [x] Interactive House (asymmetrical layout, glass bottom nav)
+- [x] QR Scanner Modal (html5-qrcode)
+- [x] Token Validation API (4-Layer Security)
+- [x] Client-side validation helper
+- [x] Adopt page ใช้ validation API
+- [x] Bottom Nav: "สแกน QR"
+- [x] Design Spec documents (3 ฉบับ)
+- [x] Test page สำหรับ API testing
+- [x] Deploy ขึ้น Vercel Production
+
+### Phase 2A: QR System Complete 🔜 (ทำต่อ)
+
+- [ ] Purpose-based Router (auto-route by context)
+- [ ] Household Invitation Flow
+- [ ] Vet Access Flow
+- [ ] Contest Registration Flow
+- [ ] Token Templates (predefined purposes)
+- [ ] Token Analytics (scan count, conversion)
+
+### Phase 2B: Enhanced Home Experience 🔜
+
+- [ ] Real-time Journey Updates (Supabase Realtime)
+- [ ] Pet Interaction Animations
+- [ ] Photo Upload
 - [ ] Life Journey events with media (photo, video)
-- [ ] Edit litter / babies หลังสร้างแล้ว
-- [ ] Parent linking UI (เลือกจาก dropdown → เชื่อมอัตโนมัติ)
-- [ ] Species picker ใน Birth page (ทีหลัง)
-- [ ] QR token expiry selector
+- [ ] Push Notifications (FCM)
 - [ ] Mobile responsive polish
+
+### Phase 3: Visual World Foundation 🔜
+
+> สอดคล้องกับ Product Vision: "ให้ภาพมันเล่าเรื่อง"
+
+- [ ] Home as Visual Space (Interactive House)
+- [ ] Progressive Information UI
+- [ ] Visual Language System (icons, symbols)
+- [ ] Home ID system (บ้านเลขที่)
+- [ ] Multi-Home support (1 User = Multiple Homes)
+
+### Phase 4: Life Journey Enhancement 🔜
+
+> สอดคล้องกับ Product Vision: "Story of a Life"
+
+- [ ] Life Journey as Story (ไม่ใช่แค่ Data Timeline)
+- [ ] AI Story Selection (เลือก Moment ที่มีความหมาย)
+- [ ] Short Video generation (Birthday, Anniversary)
+- [ ] Emotional Design (Flashback / Remembrance)
+- [ ] Temporal Behavior analysis
+
+### Phase 5: Production Readiness 🔜
+
+- [ ] Error Handling Polish
+- [ ] Performance Optimization
+- [ ] SEO & Meta Tags
+- [ ] PWA Support
 - [ ] Test with real user data
 - [ ] Launch to 10-50 beta users
 
-### Phase 2B: Home Mode — Family & Sharing
+### Phase 6: Family & Social 🔜
+
+> สอดคล้องกับ Product Vision: "Relationship"
 
 - [ ] Family sharing & permissions (member, editor, viewer)
 - [ ] Family feed (เรื่องราวร่วมกัน)
-- [ ] Push notifications
+- [ ] Friend / Home Relationship
+- [ ] Home visibility settings
 - [ ] Multi-language support
 
-### Phase 3: Home Mode — Monetization
+### Phase 7: Community & Knowledge 🔜
+
+> สอดคล้องกับ Product Vision: "Meow Wiki"
+
+- [ ] Community platform
+- [ ] Meow Wiki (knowledge base)
+- [ ] Contributor recognition (Hall of Fame)
+- [ ] Article versioning (ต้นแบบ → การต่อยอด)
+
+### Phase 8: Visual Town 🔜
+
+> สอดคล้องกับ Product Vision: "Visual World"
+
+- [ ] Town Overview
+- [ ] Town Emotion (activity density)
+- [ ] Walk Mode (Street View style)
+- [ ] Home discovery
+
+### Phase 9: Evaluation System 🔜
+
+> สอดคล้องกับ Product Vision: "Evaluate Privately"
+
+- [ ] Internal Quality Signals
+- [ ] Temporal Behavior analysis
+- [ ] Context Events handling
+- [ ] Visual Reputation (ไม่ใช่ตัวเลข)
+
+### Phase 10: Monetization 🔜
 
 - [ ] Premium features (Freemium model)
 - [ ] Digital certificates
 - [ ] Marketplace integration
 - [ ] Advanced storage management
 
-### Phase 4: Context Expansion (อนาคต)
-
-- [ ] Farm mode (bulk creation, breeding records, pedigree)
-- [ ] Vet mode (medical, vaccination, microchip, documents)
-- [ ] Context switching (Personal Home ↔ Farm ↔ Vet)
-- [ ] Role-based access (Owner, Staff, Vet, Viewer)
-- [ ] Farm evidence / trust system
-
 ### Out of Scope (for now)
 
-Biometrics, AI Features, Gamification, Graphic Engine
+- Biometrics
+- AI Features (ยกเว้น Life Journey Video)
+- Gamification
+- Graphic Engine
+- VR / Immersive Interface
+- Internal Currency / Meow Points
 
 ---
 

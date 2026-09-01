@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { QRScannerModal } from "@/components/qr/QRScannerModal";
 
 // --- Types matching actual DB schema ---
 interface Pet {
@@ -309,6 +310,12 @@ export default function HomePage() {
   const [events, setEvents] = useState<JourneyEvent[]>([]);
 
   const [viewMode, setViewMode] = useState<"empty" | "nesting" | "living">("empty");
+  const [homeName, setHomeName] = useState("บ้านของเรา");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const prevViewModeRef = useRef<"empty" | "nesting" | "living" | null>(null);
+  const [transitionPhase, setTransitionPhase] = useState<"none" | "exiting" | "entering">("none");
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -399,13 +406,113 @@ export default function HomePage() {
     if (user) loadData();
   }, [user, loadData]);
 
+  // --- Re-fetch data when user returns to the page (e.g. after adding first pet) ---
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && user) {
+        loadData();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [user, loadData]);
+
+  // --- Sync homeName with DB when home loads ---
+  useEffect(() => {
+    if (home && !isEditingName) {
+      setHomeName(home.name);
+    }
+  }, [home, isEditingName]);
+
+  // --- Transition animation: nesting → living ---
+  useEffect(() => {
+    if (prevViewModeRef.current === null) {
+      prevViewModeRef.current = viewMode;
+      return;
+    }
+    const prev = prevViewModeRef.current;
+    prevViewModeRef.current = viewMode;
+
+    if (prev === "nesting" && viewMode === "living") {
+      setTransitionPhase("exiting");
+      setShowConfetti(true);
+      const timer = setTimeout(() => {
+        setTransitionPhase("entering");
+        const timer2 = setTimeout(() => setTransitionPhase("none"), 600);
+        return () => clearTimeout(timer2);
+      }, 400);
+      const timer3 = setTimeout(() => setShowConfetti(false), 3000);
+      return () => { clearTimeout(timer); clearTimeout(timer3); };
+    }
+  }, [viewMode]);
+
+  // --- Save home name to DB ---
+  const saveHomeName = useCallback(async () => {
+    if (!home || !homeName.trim()) return;
+    const trimmed = homeName.trim();
+    if (trimmed === home.name) {
+      setIsEditingName(false);
+      return;
+    }
+    try {
+      await supabase.from("homes").update({ name: trimmed }).eq("id", home.id);
+      setHome({ ...home, name: trimmed });
+    } catch (err) {
+      console.error("Failed to save home name:", err);
+    }
+    setIsEditingName(false);
+  }, [home, homeName, supabase]);
+
   // --- Loading ---
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 40%, #E8C99B 100%)" }}>
-        <div className="text-center animate-pulse">
-          <div className="text-6xl mb-4">🏠</div>
-          <p className="text-amber-800 font-medium">กำลังเตรียมบ้าน...</p>
+        <div className="text-center" style={{ animation: "fadeInUp 1s ease-out" }}>
+          {/* Cat Logo from Passport */}
+          <div className="mb-5" style={{ animation: "gentleBounce 2s ease-in-out infinite" }}>
+            <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Ears */}
+              <polygon points="32,42 22,12 48,34" fill="#F5A623" />
+              <polygon points="88,42 98,12 72,34" fill="#F5A623" />
+              <polygon points="35,40 27,18 46,35" fill="#FFB8C6" />
+              <polygon points="85,40 93,18 74,35" fill="#FFB8C6" />
+              {/* Face */}
+              <circle cx="60" cy="62" r="32" fill="#F5A623" />
+              {/* Eyes */}
+              <ellipse cx="48" cy="57" rx="4.5" ry="5.5" fill="#2D2D2D" />
+              <ellipse cx="72" cy="57" rx="4.5" ry="5.5" fill="#2D2D2D" />
+              <circle cx="50" cy="55.5" r="1.5" fill="white" />
+              <circle cx="74" cy="55.5" r="1.5" fill="white" />
+              {/* Nose */}
+              <ellipse cx="60" cy="64" rx="3" ry="2" fill="#FF8FA3" />
+              {/* Mouth */}
+              <path d="M57,67 Q60,71 63,67" fill="none" stroke="#D4856A" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M60,64 L60,67" fill="none" stroke="#D4856A" strokeWidth="1" />
+              {/* Whiskers */}
+              <line x1="30" y1="60" x2="46" y2="63" stroke="#D4856A" strokeWidth="1" />
+              <line x1="28" y1="66" x2="45" y2="66" stroke="#D4856A" strokeWidth="1" />
+              <line x1="74" y1="63" x2="90" y2="60" stroke="#D4856A" strokeWidth="1" />
+              <line x1="75" y1="66" x2="92" y2="66" stroke="#D4856A" strokeWidth="1" />
+              {/* Blush */}
+              <ellipse cx="40" cy="67" rx="5" ry="3" fill="#FFB8C6" opacity="0.4" />
+              <ellipse cx="80" cy="67" rx="5" ry="3" fill="#FFB8C6" opacity="0.4" />
+              {/* Body */}
+              <ellipse cx="60" cy="98" rx="22" ry="16" fill="#F5A623" />
+              {/* Paws */}
+              <ellipse cx="48" cy="110" rx="8" ry="5" fill="#F5A623" />
+              <ellipse cx="72" cy="110" rx="8" ry="5" fill="#F5A623" />
+              <ellipse cx="48" cy="110" rx="6" ry="3.5" fill="#FFD9A0" />
+              <ellipse cx="72" cy="110" rx="6" ry="3.5" fill="#FFD9A0" />
+              {/* Tail */}
+              <path d="M82,95 Q100,80 95,60" fill="none" stroke="#F5A623" strokeWidth="4" strokeLinecap="round" />
+            </svg>
+          </div>
+          <p className="text-amber-900 font-bold text-lg tracking-wide">กำลังเข้าสู่โลกของ Meow World</p>
+          <div className="mt-4 flex justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-600/40" style={{ animation: "sparkle 1.5s ease-in-out 0s infinite" }} />
+            <span className="w-2 h-2 rounded-full bg-amber-600/40" style={{ animation: "sparkle 1.5s ease-in-out 0.3s infinite" }} />
+            <span className="w-2 h-2 rounded-full bg-amber-600/40" style={{ animation: "sparkle 1.5s ease-in-out 0.6s infinite" }} />
+          </div>
         </div>
       </div>
     );
@@ -493,198 +600,480 @@ export default function HomePage() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-4px); }
         }
+        @keyframes fadeSlideOut {
+          0% { opacity: 1; transform: translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateY(-30px) scale(0.95); }
+        }
+        @keyframes fadeSlideIn {
+          0% { opacity: 0; transform: translateY(30px) scale(1.02); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes petalBurst {
+          0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+          30% { opacity: 1; }
+          100% { opacity: 0; transform: translateY(-60px) rotate(180deg); }
+        }
+        @keyframes confettiFall {
+          0% {
+            opacity: 1;
+            transform: translateY(-20vh) rotate(0deg) scale(1);
+          }
+          25% { opacity: 1; }
+          100% {
+            opacity: 0;
+            transform: translateY(100vh) rotate(720deg) scale(0.5);
+          }
+        }
+        @keyframes confettiSway {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(15px); }
+          75% { transform: translateX(-15px); }
+        }
       `}</style>
 
-      <div className="min-h-screen relative overflow-hidden" style={{ background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 30%, #E8C99B 60%, #D4B896 100%)" }}>
+      {/* ===== WELCOME / ENTRY SCREEN (Nesting Mode — Storybook Scene) ===== */}
+      {viewMode === "nesting" && (
+        <div
+          className="min-h-screen relative overflow-hidden"
+          style={{
+            background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 30%, #E8C99B 60%, #D4B896 100%)",
+            animation: transitionPhase === "exiting"
+              ? "fadeSlideOut 0.4s ease-in forwards"
+              : "fadeInUp 0.8s ease-out",
+          }}
+        >
+          {/* ===== SKY & SCENE ===== */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              viewBox="0 0 480 360"
+              className="w-full h-full"
+              preserveAspectRatio="xMidYMid slice"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <radialGradient id="sunGlowN" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="sunGradN" cx="40%" cy="40%" r="50%">
+                  <stop offset="0%" stopColor="#FDE68A" />
+                  <stop offset="100%" stopColor="#FBBF24" />
+                </radialGradient>
+                <linearGradient id="roofGradN" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#D4604E" />
+                  <stop offset="100%" stopColor="#A84439" />
+                </linearGradient>
+                <linearGradient id="houseShadowN" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="transparent" />
+                  <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
+                </linearGradient>
+                <radialGradient id="windowGlowN" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+              </defs>
 
-        {/* ===== SKY & SCENE ===== */}
-        <div className="absolute inset-0 pointer-events-none">
-          <svg
-            viewBox="0 0 480 360"
-            className="w-full h-full"
-            preserveAspectRatio="xMidYMid slice"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
-              </radialGradient>
-              <radialGradient id="sunGrad" cx="40%" cy="40%" r="50%">
-                <stop offset="0%" stopColor="#FDE68A" />
-                <stop offset="100%" stopColor="#FBBF24" />
-              </radialGradient>
-              <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#D4604E" />
-                <stop offset="100%" stopColor="#A84439" />
-              </linearGradient>
-              <linearGradient id="houseShadow" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="transparent" />
-                <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
-              </linearGradient>
-              <radialGradient id="windowGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
-              </radialGradient>
-            </defs>
+              {/* Background hills */}
+              <ellipse cx="120" cy="310" rx="200" ry="60" fill="#C5D4A0" opacity="0.5" />
+              <ellipse cx="380" cy="320" rx="180" ry="50" fill="#B8C993" opacity="0.4" />
 
-            {/* Background hills */}
-            <ellipse cx="120" cy="310" rx="200" ry="60" fill="#C5D4A0" opacity="0.5" />
-            <ellipse cx="380" cy="320" rx="180" ry="50" fill="#B8C993" opacity="0.4" />
+              {/* Sun */}
+              <Sun />
 
-            {/* Sun */}
-            <Sun />
+              {/* Clouds */}
+              <Cloud x={60} y={40} scale={0.8} delay={0} />
+              <Cloud x={300} y={25} scale={0.6} delay={8} />
 
-            {/* Clouds */}
-            <Cloud x={60} y={40} scale={0.8} delay={0} />
-            <Cloud x={300} y={25} scale={0.6} delay={8} />
+              {/* Birds */}
+              <Bird x={100} y={50} delay={0} />
+              <Bird x={320} y={35} delay={3} />
 
-            {/* Birds */}
-            <Bird x={100} y={50} delay={0} />
-            <Bird x={320} y={35} delay={3} />
+              {/* Trees background */}
+              <Tree x={50} y={275} scale={0.9} />
+              <Tree x={420} y={270} scale={1.1} />
+              <Tree x={350} y={280} scale={0.7} />
 
-            {/* Trees background */}
-            <Tree x={50} y={275} scale={0.9} />
-            <Tree x={420} y={270} scale={1.1} />
-            <Tree x={350} y={280} scale={0.7} />
+              {/* Ground */}
+              <ellipse cx="240" cy="310" rx="280" ry="55" fill="#A8C686" />
+              <ellipse cx="240" cy="315" rx="260" ry="45" fill="#96B878" />
 
-            {/* Ground */}
-            <ellipse cx="240" cy="310" rx="280" ry="55" fill="#A8C686" />
-            <ellipse cx="240" cy="315" rx="260" ry="45" fill="#96B878" />
+              {/* Path to house */}
+              <path d="M200,310 Q195,290 198,260" fill="none" stroke="#D4B896" strokeWidth="6" strokeLinecap="round" opacity="0.6" />
 
-            {/* Path to house */}
-            <path d="M200,310 Q195,290 198,260" fill="none" stroke="#D4B896" strokeWidth="6" strokeLinecap="round" opacity="0.6" />
+              {/* Flowers */}
+              <Flower x={80} y={300} color="#F472B6" delay={0} />
+              <Flower x={100} y={305} color="#FB923C" delay={1} />
+              <Flower x={340} y={298} color="#C084FC" delay={0.5} />
+              <Flower x={370} y={303} color="#F472B6" delay={1.5} />
+              <Flower x={150} y={308} color="#FBBF24" delay={2} />
 
-            {/* Flowers */}
-            <Flower x={80} y={300} color="#F472B6" delay={0} />
-            <Flower x={100} y={305} color="#FB923C" delay={1} />
-            <Flower x={340} y={298} color="#C084FC" delay={0.5} />
-            <Flower x={370} y={303} color="#F472B6" delay={1.5} />
-            <Flower x={150} y={308} color="#FBBF24" delay={2} />
+              {/* Grass */}
+              <GrassBlade x={70} y={308} height={10} delay={0} />
+              <GrassBlade x={90} y={310} height={8} delay={0.3} />
+              <GrassBlade x={350} y={306} height={11} delay={0.6} />
+              <GrassBlade x={380} y={309} height={9} delay={0.9} />
+              <GrassBlade x={130} y={312} height={7} delay={1.2} />
+              <GrassBlade x={400} y={307} height={10} delay={1.5} />
 
-            {/* Grass */}
-            <GrassBlade x={70} y={308} height={10} delay={0} />
-            <GrassBlade x={90} y={310} height={8} delay={0.3} />
-            <GrassBlade x={350} y={306} height={11} delay={0.6} />
-            <GrassBlade x={380} y={309} height={9} delay={0.9} />
-            <GrassBlade x={130} y={312} height={7} delay={1.2} />
-            <GrassBlade x={400} y={307} height={10} delay={1.5} />
+              {/* HOUSE — Interactive Hotspot (Primary CTA) */}
+              <House onClick={handleEnterHouse} />
 
-            {/* HOUSE — Interactive Hotspot */}
-            <House onClick={handleEnterHouse} />
+              {/* Cat near door (looking at user) */}
+              <CatNearDoor x={268} y={268} />
 
-            {/* Family near house */}
-            <Family x={130} y={275} />
+              {/* Foreground flowers (depth) */}
+              <Flower x={30} y={340} color="#F472B6" delay={0.8} />
+              <Flower x={55} y={345} color="#FB923C" delay={1.8} />
+              <Flower x={440} y={338} color="#C084FC" delay={1.2} />
+              <Flower x={460} y={343} color="#FBBF24" delay={2.2} />
 
-            {/* Cat near door (looking at user) */}
-            <CatNearDoor x={268} y={268} />
-
-            {/* Cat sitting on grass */}
-            <Cat x={320} y={285} delay={0} />
-
-            {/* Foreground flowers (depth) */}
-            <Flower x={30} y={340} color="#F472B6" delay={0.8} />
-            <Flower x={55} y={345} color="#FB923C" delay={1.8} />
-            <Flower x={440} y={338} color="#C084FC" delay={1.2} />
-            <Flower x={460} y={343} color="#FBBF24" delay={2.2} />
-
-            {/* Foreground grass (depth) */}
-            <GrassBlade x={20} y={348} height={14} delay={0.4} />
-            <GrassBlade x={40} y={350} height={12} delay={0.7} />
-            <GrassBlade x={445} y={346} height={13} delay={1.0} />
-            <GrassBlade x={465} y={349} height={11} delay={1.3} />
-          </svg>
-        </div>
-
-        {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
-        <div className="relative z-10 min-h-screen flex flex-col">
-          <div className="flex-1 flex items-center">
-            <div className="px-6 pt-16 pb-40 md:px-12 lg:px-20 max-w-lg"
-              style={{ animation: "fadeInUp 1s ease-out" }}>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-amber-900 mb-3"
-                style={{ textShadow: "0 2px 8px rgba(139,69,19,0.1)" }}>
-                MEOW WORLD
-              </h1>
-              <p className="text-base md:text-lg text-amber-800/80 leading-relaxed font-medium">
-                ยินดีต้อนรับสู่โลกของเจ้าเหมียว
-              </p>
-
-              {/* Pet avatars (living mode) */}
-              {viewMode === "living" && pets.length > 0 && (
-                <div className="mt-8 flex items-center gap-3" style={{ animation: "fadeInUp 1.2s ease-out 0.3s both" }}>
-                  <div className="flex -space-x-3">
-                    {pets.slice(0, 5).map((pet, i) => (
-                      <div
-                        key={pet.id}
-                        className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-lg overflow-hidden"
-                        style={{ backgroundColor: ["#FDE8C8", "#E8D5C4", "#D4E8D0", "#E8D0E0", "#D0E0E8"][i % 5] }}
-                      >
-                        {pet.avatar_url ? (
-                          <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
-                        ) : (
-                          "🐱"
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-amber-900">{pets.length} สมาชิก</p>
-                    <p className="text-xs text-amber-700/60">{events.length} เรื่องราว</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Nesting mode hint */}
-              {viewMode === "nesting" && (
-                <div className="mt-8" style={{ animation: "fadeInUp 1.2s ease-out 0.3s both" }}>
-                  <p className="text-sm text-amber-800/60 italic">
-                    แตะบ้านเพื่อเริ่มต้น...
-                  </p>
-                </div>
-              )}
-            </div>
+              {/* Foreground grass (depth) */}
+              <GrassBlade x={20} y={348} height={14} delay={0.4} />
+              <GrassBlade x={40} y={350} height={12} delay={0.7} />
+              <GrassBlade x={445} y={346} height={13} delay={1.0} />
+              <GrassBlade x={465} y={349} height={11} delay={1.3} />
+            </svg>
           </div>
 
-          {/* ===== BOTTOM NAVIGATION — Glass Style ===== */}
-          <div className="fixed bottom-0 left-0 right-0 z-30 pb-safe">
-            <div className="mx-auto max-w-md px-6 pb-6">
-              <div
-                className="flex items-center justify-around py-3 px-4 rounded-2xl"
-                style={{
-                  background: "rgba(255, 255, 255, 0.25)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)",
-                  boxShadow: "0 4px 24px rgba(139, 69, 19, 0.08)",
-                }}
-              >
-                <button
-                  onClick={() => router.push("/pets/birth")}
-                  className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
-                >
-                  <span className="text-xl">+</span>
-                  <span className="text-[11px] font-semibold text-amber-900/70">เพิ่มสมาชิก</span>
-                </button>
+          {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
+          <div className="relative z-10 min-h-screen flex flex-col">
+            <div className="flex-1 flex items-center">
+              <div className="px-6 pt-16 pb-40 md:px-12 lg:px-20 max-w-lg"
+                style={{ animation: "fadeInUp 1s ease-out" }}>
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-amber-900 mb-2"
+                  style={{ textShadow: "0 2px 8px rgba(139,69,19,0.1)" }}>
+                  MEOW WORLD
+                </h1>
+                <p className="text-base md:text-lg text-amber-800/80 leading-relaxed font-medium">
+                  ยินดีต้อนรับสู่โลกของเจ้าเหมียว
+                </p>
+              </div>
+            </div>
 
-                <div className="w-px h-8 bg-amber-900/10" />
-
-                <button
-                  onClick={() => router.push("/pets")}
-                  className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
+            {/* ===== BOTTOM NAVIGATION — Minimal Translucent Glass ===== */}
+            <div className="fixed bottom-0 left-0 right-0 z-30 pb-safe">
+              <div className="mx-auto max-w-md px-6 pb-6">
+                <div
+                  className="flex items-center justify-around py-3 px-4 rounded-2xl"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.25)",
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    boxShadow: "0 4px 24px rgba(139, 69, 19, 0.08)",
+                  }}
                 >
-                  <svg className="w-5 h-5 text-amber-900/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7" rx="1" />
-                    <rect x="14" y="3" width="7" height="7" rx="1" />
-                    <rect x="3" y="14" width="7" height="7" rx="1" />
-                    <rect x="14" y="14" width="7" height="7" rx="1" />
-                  </svg>
-                  <span className="text-[11px] font-semibold text-amber-900/70">สัตว์เลี้ยง</span>
-                </button>
+                  <button
+                    onClick={() => router.push("/pets/birth")}
+                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
+                  >
+                    <span className="text-xl">+</span>
+                    <span className="text-[11px] font-semibold text-amber-900/70">เพิ่มสมาชิก</span>
+                  </button>
+
+                  <div className="w-px h-8 bg-amber-900/10" />
+
+                  <button
+                    onClick={() => setShowQRScanner(true)}
+                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
+                  >
+                    <svg className="w-5 h-5 text-amber-900/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="8" height="8" rx="1" />
+                      <rect x="14" y="2" width="8" height="8" rx="1" />
+                      <rect x="2" y="14" width="8" height="8" rx="1" />
+                      <path d="M14 14h8v8h-8z" />
+                      <path d="M18 14v2" />
+                      <path d="M18 18v2" />
+                      <path d="M14 18h2" />
+                    </svg>
+                    <span className="text-[11px] font-semibold text-amber-900/70">สแกน QR</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-}
+      )}
+
+      {/* ===== LIVING MODE — Storybook Scene ===== */}
+      {viewMode === "living" && (
+        <div
+          className="min-h-screen relative overflow-hidden"
+          style={{
+            background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 30%, #E8C99B 60%, #D4B896 100%)",
+            animation: transitionPhase === "entering"
+              ? "fadeSlideIn 0.6s ease-out"
+              : undefined,
+          }}
+        >
+
+          {/* ===== SKY & SCENE ===== */}
+          <div className="absolute inset-0 pointer-events-none">
+            <svg
+              viewBox="0 0 480 360"
+              className="w-full h-full"
+              preserveAspectRatio="xMidYMid slice"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="sunGrad" cx="40%" cy="40%" r="50%">
+                  <stop offset="0%" stopColor="#FDE68A" />
+                  <stop offset="100%" stopColor="#FBBF24" />
+                </radialGradient>
+                <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#D4604E" />
+                  <stop offset="100%" stopColor="#A84439" />
+                </linearGradient>
+                <linearGradient id="houseShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="transparent" />
+                  <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
+                </linearGradient>
+                <radialGradient id="windowGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+
+              {/* Background hills */}
+              <ellipse cx="120" cy="310" rx="200" ry="60" fill="#C5D4A0" opacity="0.5" />
+              <ellipse cx="380" cy="320" rx="180" ry="50" fill="#B8C993" opacity="0.4" />
+
+              {/* Sun */}
+              <Sun />
+
+              {/* Clouds */}
+              <Cloud x={60} y={40} scale={0.8} delay={0} />
+              <Cloud x={300} y={25} scale={0.6} delay={8} />
+
+              {/* Birds */}
+              <Bird x={100} y={50} delay={0} />
+              <Bird x={320} y={35} delay={3} />
+
+              {/* Trees background */}
+              <Tree x={50} y={275} scale={0.9} />
+              <Tree x={420} y={270} scale={1.1} />
+              <Tree x={350} y={280} scale={0.7} />
+
+              {/* Ground */}
+              <ellipse cx="240" cy="310" rx="280" ry="55" fill="#A8C686" />
+              <ellipse cx="240" cy="315" rx="260" ry="45" fill="#96B878" />
+
+              {/* Path to house */}
+              <path d="M200,310 Q195,290 198,260" fill="none" stroke="#D4B896" strokeWidth="6" strokeLinecap="round" opacity="0.6" />
+
+              {/* Flowers */}
+              <Flower x={80} y={300} color="#F472B6" delay={0} />
+              <Flower x={100} y={305} color="#FB923C" delay={1} />
+              <Flower x={340} y={298} color="#C084FC" delay={0.5} />
+              <Flower x={370} y={303} color="#F472B6" delay={1.5} />
+              <Flower x={150} y={308} color="#FBBF24" delay={2} />
+
+              {/* Grass */}
+              <GrassBlade x={70} y={308} height={10} delay={0} />
+              <GrassBlade x={90} y={310} height={8} delay={0.3} />
+              <GrassBlade x={350} y={306} height={11} delay={0.6} />
+              <GrassBlade x={380} y={309} height={9} delay={0.9} />
+              <GrassBlade x={130} y={312} height={7} delay={1.2} />
+              <GrassBlade x={400} y={307} height={10} delay={1.5} />
+
+              {/* HOUSE — Interactive Hotspot */}
+              <House onClick={handleEnterHouse} />
+
+              {/* Family near house */}
+              <Family x={130} y={275} />
+
+              {/* Cat near door (looking at user) */}
+              <CatNearDoor x={268} y={268} />
+
+              {/* Cat sitting on grass */}
+              <Cat x={320} y={285} delay={0} />
+
+              {/* Foreground flowers (depth) */}
+              <Flower x={30} y={340} color="#F472B6" delay={0.8} />
+              <Flower x={55} y={345} color="#FB923C" delay={1.8} />
+              <Flower x={440} y={338} color="#C084FC" delay={1.2} />
+              <Flower x={460} y={343} color="#FBBF24" delay={2.2} />
+
+              {/* Foreground grass (depth) */}
+              <GrassBlade x={20} y={348} height={14} delay={0.4} />
+              <GrassBlade x={40} y={350} height={12} delay={0.7} />
+              <GrassBlade x={445} y={346} height={13} delay={1.0} />
+              <GrassBlade x={465} y={349} height={11} delay={1.3} />
+            </svg>
+          </div>
+
+          {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
+          <div className="relative z-10 min-h-screen flex flex-col">
+            <div className="flex-1 flex items-center">
+              <div className="px-6 pt-16 pb-40 md:px-12 lg:px-20 max-w-lg"
+                style={{ animation: "fadeInUp 1s ease-out" }}>
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-amber-900 mb-1"
+                  style={{ textShadow: "0 2px 8px rgba(139,69,19,0.1)" }}>
+                  MEOW WORLD
+                </h1>
+                {home && (
+                  <p className="text-sm md:text-base font-semibold text-amber-700/70 mb-2 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-600/40" />
+                    {home.name}
+                  </p>
+                )}
+                <p className="text-base md:text-lg text-amber-800/80 leading-relaxed font-medium">
+                  ยินดีต้อนรับสู่โลกของเจ้าเหมียว
+                </p>
+
+                {/* Pet avatars */}
+                {pets.length > 0 && (
+                  <div className="mt-8 flex items-center gap-3" style={{ animation: "fadeInUp 1.2s ease-out 0.3s both" }}>
+                    <div className="flex -space-x-3">
+                      {pets.slice(0, 5).map((pet, i) => (
+                        <div
+                          key={pet.id}
+                          className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-lg overflow-hidden"
+                          style={{ backgroundColor: ["#FDE8C8", "#E8D5C4", "#D4E8D0", "#E8D0E0", "#D0E0E8"][i % 5] }}
+                        >
+                          {pet.avatar_url ? (
+                            <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                          ) : (
+                            "🐱"
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-amber-900">{pets.length} สมาชิก</p>
+                      <p className="text-xs text-amber-700/60">{events.length} เรื่องราว</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ===== BOTTOM NAVIGATION — Glass Style ===== */}
+            <div className="fixed bottom-0 left-0 right-0 z-30 pb-safe">
+              <div className="mx-auto max-w-md px-6 pb-6">
+                <div
+                  className="flex items-center justify-around py-3 px-4 rounded-2xl"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.25)",
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    boxShadow: "0 4px 24px rgba(139, 69, 19, 0.08)",
+                  }}
+                >
+                  <button
+                    onClick={() => router.push("/pets/birth")}
+                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
+                  >
+                    <span className="text-xl">+</span>
+                    <span className="text-[11px] font-semibold text-amber-900/70">เพิ่มสมาชิก</span>
+                  </button>
+
+                  <div className="w-px h-8 bg-amber-900/10" />
+
+                  <button
+                    onClick={() => setShowQRScanner(true)}
+                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
+                  >
+                    <svg className="w-5 h-5 text-amber-900/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="8" height="8" rx="1" />
+                      <rect x="14" y="2" width="8" height="8" rx="1" />
+                      <rect x="2" y="14" width="8" height="8" rx="1" />
+                      <path d="M14 14h8v8h-8z" />
+                      <path d="M18 14v2" />
+                      <path d="M18 18v2" />
+                      <path d="M14 18h2" />
+                    </svg>
+                    <span className="text-[11px] font-semibold text-amber-900/70">สแกน QR</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== CELEBRATION CONFETTI ===== */}
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+          {Array.from({ length: 40 }).map((_, i) => {
+            const colors = ["#E06D53", "#F5A623", "#FFB8C6", "#6B8E68", "#C89933", "#FBBF24", "#FF8FA3", "#7BC47A"];
+            const shapes = ["rounded-full", "rounded-sm", "rounded-none"];
+            const left = Math.random() * 100;
+            const delay = Math.random() * 1.5;
+            const duration = 2 + Math.random() * 1.5;
+            const size = 6 + Math.random() * 8;
+            const color = colors[i % colors.length];
+            const shape = shapes[i % shapes.length];
+            const swayDelay = Math.random() * 2;
+
+            return (
+              <div
+                key={i}
+                className={`absolute ${shape}`}
+                style={{
+                  left: `${left}%`,
+                  top: 0,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  backgroundColor: color,
+                  animation: `confettiFall ${duration}s ease-in ${delay}s forwards, confettiSway ${1 + swayDelay}s ease-in-out ${delay}s infinite`,
+                  opacity: 0,
+                }}
+              />
+            );
+          })}
+          {/* Paw print particles */}
+          {Array.from({ length: 8 }).map((_, i) => {
+            const left = 15 + Math.random() * 70;
+            const delay = 0.3 + Math.random() * 1.2;
+            const duration = 2.5 + Math.random() * 1;
+            const size = 16 + Math.random() * 12;
+
+            return (
+              <div
+                key={`paw-${i}`}
+                className="absolute text-center pointer-events-none select-none"
+                style={{
+                  left: `${left}%`,
+                  top: 0,
+                  fontSize: `${size}px`,
+                  animation: `confettiFall ${duration}s ease-in ${delay}s forwards, confettiSway ${1.5 + Math.random()}s ease-in-out ${delay}s infinite`,
+                  opacity: 0,
+                }}
+              >
+                🐾
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ===== EMPTY MODE ===== */}
+      {viewMode === "empty" && (
+        <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 40%, #E8C99B 100%)" }}>
+          <div className="text-center space-y-4" style={{ animation: "fadeInUp 0.8s ease-out" }}>
+            <div className="text-5xl">😿</div>
+            <h2 className="text-xl font-bold text-amber-900">เกิดข้อผิดพลาด</h2>
+            <p className="text-sm text-amber-800/60">ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่อีกครั้ง</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2.5 rounded-xl bg-amber-800 text-white text-sm font-bold"
+            >
+              ลองใหม่
+            </button>            </div>
+          </div>
+        )}
+
+      {/* QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+      />
+      </>
+    );
+  }

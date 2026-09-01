@@ -107,6 +107,15 @@
   animation: pulseGlow 2.5s ease-in-out infinite;
 }
 
+@keyframes gentleBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-bounce-gentle {
+  animation: gentleBounce 2s ease-in-out infinite;
+}
+
 /* Modal Backdrop */
 .modal-backdrop {
   background: rgba(31, 30, 29, 0.65);
