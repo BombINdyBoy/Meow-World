@@ -6,6 +6,7 @@ import { Pet, LifeJourneyEvent, LifeJourneyEventFormData } from '@/types/pet';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
+import { ShareButton } from '@/components/qr/ShareButton';
 
 const EVENT_TYPES = [
   { value: 'medical', label: 'การรักษาพยาบาล', color: 'bg-red-100 text-red-800' },
@@ -165,12 +166,15 @@ export default function PetDetailPage() {
                 {age && ` • ${age}`}
               </p>
             </div>
-            <button
-              onClick={() => router.push(`/pets/${petId}/edit`)}
-              className="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
-            >
-              แก้ไขข้อมูล
-            </button>
+            <div className="flex gap-2">
+              <ShareButton petId={petId} petName={pet.name} />
+              <button
+                onClick={() => router.push(`/pets/${petId}/edit`)}
+                className="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
+              >
+                แก้ไขข้อมูล
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">

@@ -71,7 +71,7 @@ WHERE flag_name = 'decoration';
 | **ชื่อ "Meow World"** | เป็น brand ไม่ใช่ข้อจำกัด |
 | **ทุกสัตว์อยู่ใต้หลังคาเดียวกัน** | เลี้ยงร่วมกันได้ |
 | **ฟีเจอร์เท่าเทียม** | สุนัข might have more features than cats! |
-| **ไม่แยก species** | ไม่รู้สึกเป็น "บุคลากรชั้น 2" |
+| **ไม่แยก species** | ไม่รู้สึกเป็น "บุคลากรชั้น 3" |
 
 ### Species Features
 
