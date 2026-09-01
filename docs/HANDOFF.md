@@ -854,6 +854,127 @@ QR, Marketplace, Biometrics, Advanced Storage, Social, AI Features, Gamification
 
 ---
 
+## 🐣 Feature Spec: Birth → Pet Identity → Progressive Passport
+
+**เอกสารเสริมสำหรับผู้พัฒนา**
+
+### วัตถุประสงค์
+
+ออกแบบจุดเริ่มต้นการใช้งานระบบสำหรับสัตว์เลี้ยง โดยเฉพาะกรณีที่ผู้ใช้ต้องการบันทึกการเกิดของลูกแมว/สัตว์หลายตัวพร้อมกัน
+
+เป้าหมายหลัก:
+
+1. ลดจำนวนข้อมูลที่ผู้ใช้ต้องกรอกซ้ำ
+2. ให้ผู้ใช้สามารถสร้าง Pet ID ได้ตั้งแต่ข้อมูลยังไม่สมบูรณ์
+3. สร้างความสัมพันธ์แบบกลุ่มก่อน แล้วค่อยเติม Relationship ที่ละเอียดภายหลัง
+4. สร้าง Life Journey แรกให้อัตโนมัติจากเหตุการณ์การเกิด
+5. สร้าง Passport เบื้องต้นโดยไม่บังคับให้ข้อมูลครบ
+6. รองรับ Home / Farm / Vet ด้วย Data Model เดียวกัน แต่ UX สามารถแตกต่างกันได้
+7. รองรับการเติมข้อมูลในอนาคต เช่น Microchip, Biometrics, Certificate, Pedigree และ Medical Record โดยไม่ต้องสร้าง Pet ID ใหม่
+
+### Core Principle
+
+> **Create Identity First. Complete It Over Time.**
+> สร้างตัวตนก่อน แล้วค่อยเติมความสมบูรณ์ตามเวลาและความพร้อม
+
+ข้อมูลที่ไม่ครบในวันแรก **ไม่ถือเป็น Error**
+
+วันแรกอาจรู้เพียง รูป, วันเกิดโดยประมาณ, สี, พ่อ, แม่ — ก็เพียงพอที่จะสร้าง Pet ID ได้
+
+### Data Flow
+
+```text
+Birth Event → Group / Litter → Shared Context → Individual Pet Records
+→ Pet ID → First Life Journey → Initial Passport → Progressive Identity → Complete Passport
+```
+
+### Birth Event / Group ก่อน Individual
+
+กรณีลูกเกิดพร้อมกัน 5 ตัว ระบบไม่ควรให้ผู้ใช้กรอกข้อมูล 5 รอบ
+
+```text
+Litter #003
+Mother: Luna | Father: Milo | Birth Date: 01/09/2026 | Location: Home
+
+→ Baby #01, #02, #03, #04, #05
+```
+
+ข้อมูลที่เหมือนกันเก็บในระดับ Group/Event
+ข้อมูลที่แตกต่างกันเก็บในระดับ Individual
+
+### Shared Data vs Individual Data
+
+| Shared Data (กรอกครั้งเดียว) | Individual Data (แต่ละตัว) |
+|---|---|
+| พ่อ, แม่ | รูปเฉพาะตัว |
+| วันเกิดหลักของครอก | ชื่อเรียกแรกเกิด |
+| สถานที่, เหตุการณ์การเกิด | เพศ, สี, ลักษณะพิเศษ |
+| รูปกลุ่ม, ผู้บันทึก | น้ำหนักแรกเกิด |
+
+### Parent Information
+
+**Case A:** พ่อ/แม่มี Pet ID อยู่แล้ว → เลือกจาก dropdown ได้ทันที
+
+**Case B:** ยังไม่มี Pet ID → ระบุเพียงชื่อ สร้าง Parent Reference ได้
+
+### Default / Inheritance
+
+ระบบควรใช้ข้อมูลจาก Group เป็น Default (เช่น Breed = British Shorthair)
+แต่ไม่ควรถือว่าเป็นการยืนยันทางสายพันธุ์อัตโนมัติ
+ผู้ใช้สามารถแก้ไขเฉพาะตัวได้
+
+### Pet ID Creation
+
+```text
+Day 1: PET-0003 (Photo + Birth + Color)
+Month 6: + Microchip
+Year 1: + Certificate
+Year 2: + Biometrics
+```
+
+Pet ID เป็น Persistent Identity — ข้อมูลภายหลังเพิ่มได้โดยไม่เปลี่ยน Pet ID
+
+### First Life Journey
+
+เมื่อสร้าง Pet ID แล้ว ระบบสร้าง Life Journey Event แรกให้อัตโนมัติ
+Birth Event = First Life Journey Event
+
+### Progressive Passport
+
+```text
+Day 1:    ✓ Pet ID ✓ Birth ✓ Photo ✓ Parents ✓ Color  ○ Microchip ○ Biometrics ○ Certificate
+Later:    + Microchip + Vaccination + Medical
+Future:   + Biometrics + Certificate + Ownership
+```
+
+Passport เดิมต้องถูกเติมข้อมูลต่อเนื่อง — ไม่สร้างใหม่ทุกครั้ง
+
+### Farm vs Home vs Vet
+
+| Mode | เน้น |
+|---|---|
+| **Home** | Memory, Photo, Story, Birth, Family, Health, Life Journey |
+| **Farm** | Bulk Creation, Litter, Parents, Breed, Pedigree, Certificate |
+| **Vet** | Identity, Medical, Vaccination, Microchip, Documents, Verification |
+
+### UX Principle
+
+> เริ่มจากสิ่งที่รู้วันนี้ แล้วค่อยเติมสิ่งที่รู้ในวันต่อๆ ไป
+
+ข้อมูลที่ไม่มี ไม่ควรแสดงเป็น Error ไม่ควรบังคับกรอก ไม่ควรป้องกันการสร้าง Pet ID
+
+### Final Design Principles
+
+1. **Capture first.** เก็บสิ่งที่รู้ก่อน
+2. **Connect later.** เชื่อมข้อมูลเมื่อพร้อม
+3. **Verify when available.** เพิ่มหลักฐานเมื่อมี
+4. **Complete over time.** ค่อยๆ ทำให้ Identity สมบูรณ์ขึ้น
+5. **Never make the user enter the same information twice.**
+
+> **Every pet can start with an identity. Documents, Biometrics, Microchip and Certificates increase confidence in the identity; they do not create the identity itself.**
+
+---
+
 ## 📁 Files Summary
 
 ### Configuration Files
