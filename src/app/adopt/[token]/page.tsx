@@ -120,7 +120,36 @@ export default function AdoptPage() {
     
     setIsProcessing(true);
     try {
-      // 1. Check if user already has a home
+      // Guard: prevent sender from adopting their own pet
+      if (user.id === tokenData.sender_id) {
+        throw new Error('คุณไม่สามารถ adopt สัตว์ของตัวเองได้');
+      }
+
+      // 1. Mark token as used FIRST (prevent race condition)
+      const { error: tokenUpdateError } = await supabase
+        .from('qr_tokens')
+        .update({
+          is_used: true,
+          used_by: user.id,
+          used_at: new Date().toISOString(),
+        })
+        .eq('id', token)
+        .eq('is_used', false); // optimistic lock
+
+      if (tokenUpdateError) throw tokenUpdateError;
+
+      // Re-check that the update actually affected a row (race condition safety)
+      const { data: verifyToken } = await supabase
+        .from('qr_tokens')
+        .select('is_used, used_by')
+        .eq('id', token)
+        .single();
+
+      if (!verifyToken || verifyToken.used_by !== user.id) {
+        throw new Error('QR Token นี้ถูกใช้โดยคนอื่นไปแล้ว');
+      }
+
+      // 2. Check if user already has a home
       const { data: existingHomes } = await supabase
         .from('homes')
         .select('id')
@@ -130,7 +159,6 @@ export default function AdoptPage() {
       let homeId: string;
 
       if (existingHomes && existingHomes.length > 0) {
-        // User already has a home
         homeId = existingHomes[0].id;
       } else {
         // Create new home
@@ -151,23 +179,13 @@ export default function AdoptPage() {
         });
       }
 
-      // 2. Update pet's home_id (transfer pet to new home)
+      // 3. Transfer pet to new home
       const { error: petError } = await supabase
         .from('pets')
         .update({ home_id: homeId })
         .eq('id', tokenData.pet_id);
 
       if (petError) throw petError;
-
-      // 3. Mark token as used
-      await supabase
-        .from('qr_tokens')
-        .update({
-          is_used: true,
-          used_by: user.id,
-          used_at: new Date().toISOString(),
-        })
-        .eq('id', token);
 
       // 4. Show success
       setStep('success');
@@ -340,7 +358,7 @@ export default function AdoptPage() {
           </div>
 
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push(`/pets/${tokenData?.pet_id}`)}
             className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold"
           >
             ไปดูน้องในบ้าน

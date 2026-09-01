@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
 import { ShareButton } from '@/components/qr/ShareButton';
+import { TokenList } from '@/components/qr/TokenList';
 
 const EVENT_TYPES = [
   { value: 'medical', label: 'การรักษาพยาบาล', color: 'bg-red-100 text-red-800' },
@@ -26,6 +27,7 @@ export default function PetDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showEventForm, setShowEventForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showTokens, setShowTokens] = useState(false);
 
   const supabase = createClient();
 
@@ -169,6 +171,12 @@ export default function PetDetailPage() {
             <div className="flex gap-2">
               <ShareButton petId={petId} petName={pet.name} />
               <button
+                onClick={() => setShowTokens(true)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                🔑 Tokens
+              </button>
+              <button
                 onClick={() => router.push(`/pets/${petId}/edit`)}
                 className="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
               >
@@ -284,6 +292,11 @@ export default function PetDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Token List Modal */}
+      {showTokens && (
+        <TokenList petId={petId} onClose={() => setShowTokens(false)} />
+      )}
     </div>
   );
 }

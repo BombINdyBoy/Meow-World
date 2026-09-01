@@ -21,6 +21,12 @@ export function ShareButton({ petId, petName }: ShareButtonProps) {
       description: 'ส่งต่อให้เพื่อน adopt',
     },
     {
+      context: 'adoption' as const,
+      icon: '📦',
+      label: 'ส่ง QR รับเลี้ยง',
+      description: 'สร้าง QR ให้คนรับน้อง',
+    },
+    {
       context: 'vet' as const,
       icon: '🏥',
       label: 'พาน้องไปพบหมอ',
