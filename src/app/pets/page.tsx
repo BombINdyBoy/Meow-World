@@ -174,6 +174,12 @@ export default function PetsPage() {
                 🐣 บันทึกการเกิด
               </button>
               <button
+                onClick={() => router.push('/pets/litters')}
+                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors"
+              >
+                📋 ประวัติครอก
+              </button>
+              <button
                 onClick={() => setShowForm(true)}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >

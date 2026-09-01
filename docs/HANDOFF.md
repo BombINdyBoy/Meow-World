@@ -816,162 +816,429 @@ Branch: qwen-prototype-v0 (development)
 
 ---
 
-## 📋 Roadmap
+## 📋 Roadmap (อัพเดท: 1 กันยายน 2026)
 
-### Phase 1: MVP (ตอนนี้) ← We are here
-
-- [x] Next.js project foundation
-- [x] Supabase client/server utilities
-- [x] Authentication flow (Email + Google OAuth)
-- [x] Pet Passport CRUD UI
-- [x] Life Journey timeline UI
-- [x] Home / Family UI
-- [x] Vercel deployment
-- [x] Tailwind CSS styling
-- [ ] **Fix RLS infinite recursion** ← BLOCKER
-- [ ] Fix home page flow (empty → nesting → living)
-- [ ] Test with real user data
-- [ ] Launch to 10-50 beta users
-
-### Phase 2: Growth
-
-- [ ] Family sharing & permissions
-- [ ] Pet avatars & photos
-- [ ] Life Journey events with media
-- [ ] Push notifications
-- [ ] Multi-language support
-
-### Phase 3: Monetization
-
-- [ ] Premium features (Freemium model)
-- [ ] Digital certificates
-- [ ] QR sharing
-- [ ] Marketplace integration
-
-### Out of Scope (for now)
-
-QR, Marketplace, Biometrics, Advanced Storage, Social, AI Features, Gamification, Subscription, Multi-species ecosystem, Graphic Engine
+> เรียงตามลำดับความสำคัญ — **Home Mode ก่อน** ตาม Core V0 Addendum
 
 ---
 
-## 🐣 Feature Spec: Birth → Pet Identity → Progressive Passport
+### Phase 1A: Home Mode Core ✅ (ทำเสร็จแล้ว)
 
-**เอกสารเสริมสำหรับผู้พัฒนา**
+- [x] Next.js project foundation + Supabase setup
+- [x] Authentication flow (Email + Google OAuth)
+- [x] Pet CRUD UI (list, detail, edit)
+- [x] Life Journey timeline UI
+- [x] Home / Family UI
+- [x] Vercel deployment + Tailwind CSS
+- [x] Fix RLS infinite recursion
+- [x] Feature flag system
+- [x] Multi-species support
+- [x] Nest system
+- [x] Decoration system
+- [x] Family package / storage
+- [x] Community features
+- [x] Vet market features
 
-### วัตถุประสงค์
+### Phase 1B: Home Mode — Birth & Identity ✅ (ทำเสร็จแล้ว)
 
-ออกแบบจุดเริ่มต้นการใช้งานระบบสำหรับสัตว์เลี้ยง โดยเฉพาะกรณีที่ผู้ใช้ต้องการบันทึกการเกิดของลูกแมว/สัตว์หลายตัวพร้อมกัน
+- [x] QR Token adoption flow (create, share, adopt)
+- [x] QR Token viewer (list, revoke, delete)
+- [x] Adopt page (login → preview → adopt + edge cases)
+- [x] Birth/Litter creation (3-step: shared → babies → review)
+- [x] Auto PET-XXXX code generation
+- [x] Auto Life Journey "Chapter 01" creation
+- [x] Progressive Passport view (✓/○ indicators + completeness bar)
+- [x] Litter list page (birth history)
+- [x] Core V0 Addendum documentation
 
-เป้าหมายหลัก:
+### Phase 2A: Home Mode — Polish & UX 🔜 (ทำต่อ)
 
-1. ลดจำนวนข้อมูลที่ผู้ใช้ต้องกรอกซ้ำ
-2. ให้ผู้ใช้สามารถสร้าง Pet ID ได้ตั้งแต่ข้อมูลยังไม่สมบูรณ์
-3. สร้างความสัมพันธ์แบบกลุ่มก่อน แล้วค่อยเติม Relationship ที่ละเอียดภายหลัง
-4. สร้าง Life Journey แรกให้อัตโนมัติจากเหตุการณ์การเกิด
-5. สร้าง Passport เบื้องต้นโดยไม่บังคับให้ข้อมูลครบ
-6. รองรับ Home / Farm / Vet ด้วย Data Model เดียวกัน แต่ UX สามารถแตกต่างกันได้
-7. รองรับการเติมข้อมูลในอนาคต เช่น Microchip, Biometrics, Certificate, Pedigree และ Medical Record โดยไม่ต้องสร้าง Pet ID ใหม่
+- [ ] Welcome / Entry Screen — storybook-style Meow World (interactive house, asymmetrical layout, glass bottom nav)
+- [ ] Home page flow: empty → nesting → living (ทำงานได้จริง)
+- [ ] Pet avatars & photo upload
+- [ ] Life Journey events with media (photo, video)
+- [ ] Edit litter / babies หลังสร้างแล้ว
+- [ ] Parent linking UI (เลือกจาก dropdown → เชื่อมอัตโนมัติ)
+- [ ] Species picker ใน Birth page (ทีหลัง)
+- [ ] QR token expiry selector
+- [ ] Mobile responsive polish
+- [ ] Test with real user data
+- [ ] Launch to 10-50 beta users
 
-### Core Principle
+### Phase 2B: Home Mode — Family & Sharing
+
+- [ ] Family sharing & permissions (member, editor, viewer)
+- [ ] Family feed (เรื่องราวร่วมกัน)
+- [ ] Push notifications
+- [ ] Multi-language support
+
+### Phase 3: Home Mode — Monetization
+
+- [ ] Premium features (Freemium model)
+- [ ] Digital certificates
+- [ ] Marketplace integration
+- [ ] Advanced storage management
+
+### Phase 4: Context Expansion (อนาคต)
+
+- [ ] Farm mode (bulk creation, breeding records, pedigree)
+- [ ] Vet mode (medical, vaccination, microchip, documents)
+- [ ] Context switching (Personal Home ↔ Farm ↔ Vet)
+- [ ] Role-based access (Owner, Staff, Vet, Viewer)
+- [ ] Farm evidence / trust system
+
+### Out of Scope (for now)
+
+Biometrics, AI Features, Gamification, Graphic Engine
+
+---
+
+## 🏡 Welcome / Entry Screen: Meow World
+
+**Purpose:** ออกแบบหน้าจอ Welcome / Entry Screen สำหรับ MEOW WORLD — ให้ผู้ใช้รู้สึกเหมือนกำลังเปิดประตูเข้าสู่ "โลกของเจ้าเหมียว"
+
+> **หลักสำคัญ:** ไม่ใช่หน้าเว็บไซต์หรือหน้า Login ทั่วไป ภาพควรมีบรรยากาศเหมือน **storybook illustration ที่มีชีวิต** อบอุ่น น่ารัก มี depth และมีพื้นที่สำหรับ animation เล็ก ๆ ในอนาคต
+
+---
+
+### Layout
+
+ใช้ Layout แบบ **Asymmetrical Composition** ไม่จัดทุกอย่างไว้ตรงกลาง
+
+* ด้านซ้ายเป็นพื้นที่สำหรับ Brand และข้อความ
+* ด้านขวาเป็นฉากหลักของโลก Meow World
+* ห้ามวาง Main Button ขนาดใหญ่ตรงกลาง
+* ห้ามใช้ Card หรือ Panel หนัก ๆ
+* ให้ภาพเป็นพระเอกของหน้าจอ
+
+---
+
+### ด้านซ้าย
+
+แสดงข้อความ:
+
+**MEOW WORLD**
+
+**ยินดีต้อนรับสู่โลกของเจ้าเหมียว**
+
+Typography อบอุ่น เป็นมิตร อ่านง่าย แต่ไม่กินพื้นที่มากเกินไป
+
+ไม่ต้องมีปุ่ม "เริ่มสร้างโลก" ใต้ข้อความ
+
+---
+
+### ฉากด้านขวา
+
+สร้างหมู่บ้านเล็ก ๆ ที่อบอุ่นและมีชีวิต
+
+มีองค์ประกอบ:
+
+* บ้านหลังหนึ่งเป็นจุดเด่น
+* ครอบครัวอยู่บริเวณบ้าน
+* แมวอยู่ใกล้บ้าน
+* ต้นไม้
+* หญ้าและดอกไม้
+* นกบนท้องฟ้า
+* แสงพระอาทิตย์อุ่น ๆ
+* foreground เช่น ใบไม้หรือดอกไม้ เพื่อสร้าง depth
+
+Composition ต้องมี **foreground / midground / background** อย่างชัดเจน
+
+---
+
+### Interactive House
+
+บ้านหลังหลักคือ **Interactive Hotspot**
+
+สำคัญมาก:
+
+* **อย่าวาดกรอบปุ่มรอบบ้าน**
+* **อย่าวาดปุ่ม UI ทับบ้าน**
+* **อย่าใส่คำว่า "Click here"**
+
+บ้านต้องดูเหมือนเป็นส่วนหนึ่งของโลกจริง ๆ แต่มี visual cue เล็ก ๆ ว่า "แตะได้"
+
+เช่น:
+
+* แสงอ่อน ๆ รอบบ้าน
+* หน้าต่างมีแสง
+* แมวหันมาทางผู้ใช้
+* ประกายเล็ก ๆ
+* subtle glow
+* บ้านมีความรู้สึกมีชีวิต
+
+แนวคิดคือ:
+
+> **ผู้ใช้แตะบ้าน → บ้านจะกลายเป็น "บ้านของฉัน" → จากนั้นเข้าสู่โลกของผู้ใช้**
+
+ดังนั้นบ้านต้องเป็นจุด Interactive ที่สำคัญที่สุดของหน้าจอ
+
+---
+
+### Animation-friendly design
+
+ออกแบบภาพโดยเผื่อการทำ Motion Animation ภายหลัง:
+
+* แสงพระอาทิตย์สามารถเคลื่อนช้า ๆ
+* นกสามารถบินผ่าน
+* แมวสามารถกระดิกหาง / กระพริบตา
+* ใบไม้สามารถไหวเบา ๆ
+* หญ้าและดอกไม้สามารถขยับ
+* ประกายเล็ก ๆ สามารถกระพริบ
+* ผ้าม่านหรือองค์ประกอบในบ้านสามารถขยับเบา ๆ
+
+Animation ต้อง subtle และ slow — ไม่ให้ดูเหมือน video หรือ advertisement
+
+---
+
+### Bottom Navigation
+
+ด้านล่างของหน้าจอมีเพียง 2 secondary actions:
+
+**＋ เพิ่มสมาชิก**
+
+**⌁ สแกน QR**
+
+ทำเป็น **minimal translucent glass navigation**
+
+* พื้นหลังโปร่งใสประมาณ 70–80%
+* blur เล็กน้อย
+* ไม่มีกรอบหนา
+* ไม่มีสีฉูดฉาด
+* ไม่ให้แย่งความสนใจจากบ้าน
+
+สอง action นี้เป็นเพียงทางลัด และมีความสำคัญรองจาก Interactive House
+
+---
+
+### Visual hierarchy
+
+ลำดับความสำคัญ:
+
+1. Interactive House / World
+2. MEOW WORLD + Welcome message
+3. Add Member / QR Scan
+
+ภาพรวมต้องรู้สึก:
+
+> **Warm / Magical / Cozy / Playful / Storybook / Living World**
+
+* ไม่ต้องดูเหมือน Corporate App
+* ไม่ต้องดูเหมือน Dashboard
+* ไม่ต้องดูเหมือน Login Screen
+* ไม่ต้องใช้ UI แบบเว็บสมัยใหม่ที่มี Card เยอะ ๆ
+
+Aspect ratio: **16:9** — ออกแบบสำหรับ Mobile-first experience แต่สามารถนำไป adapt กับ Tablet/Desktop ได้
+
+ภาพควรมีพื้นที่ว่างเพียงพอสำหรับ UI และ animation ในอนาคต
+
+---
+
+## 🐣 Core V0 Addendum: Birth → Identity → Home/Context/Role
+
+**Purpose:** เอกสารข้อกำหนดและแนวคิดเพิ่มเติมสำหรับ Prototype V0
+
+> **หลักสำคัญ:** Core ต้องชัด แต่ Implementation ยังเปิดกว้างสำหรับการทดลองและปรับปรุง
+
+---
+
+### Part 1 — Birth → First Life Journey → Progressive Passport
+
+#### 1. แนวคิดหลัก
 
 > **Create Identity First. Complete It Over Time.**
-> สร้างตัวตนก่อน แล้วค่อยเติมความสมบูรณ์ตามเวลาและความพร้อม
 
-ข้อมูลที่ไม่ครบในวันแรก **ไม่ถือเป็น Error**
+ระบบควรเริ่มต้น Identity ของสัตว์ได้ตั้งแต่วันเกิด แม้ข้อมูลยังไม่สมบูรณ์
 
-วันแรกอาจรู้เพียง รูป, วันเกิดโดยประมาณ, สี, พ่อ, แม่ — ก็เพียงพอที่จะสร้าง Pet ID ได้
+**เกิด → จับกลุ่ม → ข้อมูลเบื้องต้น → Pet ID → First Life Journey → Progressive Passport**
 
-### Data Flow
+#### 2. Birth Event / Litter
 
-```text
-Birth Event → Group / Litter → Shared Context → Individual Pet Records
-→ Pet ID → First Life Journey → Initial Passport → Progressive Identity → Complete Passport
-```
+ข้อมูลที่เหมือนกันเก็บในระดับ **Litter / Birth Context** เพื่อลดการกรอกซ้ำ:
 
-### Birth Event / Group ก่อน Individual
+* พ่อ, แม่, วันที่เกิด, สถานที่, สายพันธุ์ที่คาดหมาย, บริบทการเกิด, ผู้บันทึก
 
-กรณีลูกเกิดพร้อมกัน 5 ตัว ระบบไม่ควรให้ผู้ใช้กรอกข้อมูล 5 รอบ
+จากนั้นแต่ละ Baby มีข้อมูลเฉพาะของตัวเอง
 
-```text
-Litter #003
-Mother: Luna | Father: Milo | Birth Date: 01/09/2026 | Location: Home
+#### 3. ลดการกรอกข้อมูลซ้ำ
 
-→ Baby #01, #02, #03, #04, #05
-```
+**Create Litter → Shared Information ครั้งเดียว → เพิ่มสมาชิกแต่ละตัว**
 
-ข้อมูลที่เหมือนกันเก็บในระดับ Group/Event
-ข้อมูลที่แตกต่างกันเก็บในระดับ Individual
+ข้อมูลที่ Override รายตัวได้: วันเกิด, น้ำหนัก, สี, ลักษณะพิเศษ, รูป, ชื่อเรียก
 
-### Shared Data vs Individual Data
+กรณีเกิดข้ามวัน ใช้วันที่ของตัวแรกเป็น Birth Date เบื้องต้น แก้ไขภายหลังได้
 
-| Shared Data (กรอกครั้งเดียว) | Individual Data (แต่ละตัว) |
+#### 4. Initial Pet Information
+
+ควรใช้ Dropdown / Checkbox / Selection เป็นหลัก ลดการพิมพ์และข้อมูลผิดรูปแบบ
+
+ข้อมูลที่ไม่ทราบ: **ข้าม → บันทึกก่อน → เติมภายหลัง**
+
+#### 5. Parent Relationship
+
+* มี Identity อยู่แล้ว → เลือก Parent → เชื่อม Relationship
+* ยังไม่มี → สร้าง Parent Reference → เชื่อมภายหลังได้
+
+ไม่ควรบังคับให้ Parent มี Passport สมบูรณ์ก่อน
+
+#### 6. First Life Journey
+
+Birth Event = Life Journey Event แรก
+
+ข้อความสามารถปรับตาม Context:
+
+| Context | สิ่งที่เน้น |
 |---|---|
-| พ่อ, แม่ | รูปเฉพาะตัว |
-| วันเกิดหลักของครอก | ชื่อเรียกแรกเกิด |
-| สถานที่, เหตุการณ์การเกิด | เพศ, สี, ลักษณะพิเศษ |
-| รูปกลุ่ม, ผู้บันทึก | น้ำหนักแรกเกิด |
+| **Home** | เรื่องราว, ความทรงจำ |
+| **Farm** | ความรวดเร็ว, ข้อมูลสำคัญ |
+| **Vet** | ข้อมูลการดูแล |
 
-### Parent Information
+#### 7. Progressive Passport
 
-**Case A:** พ่อ/แม่มี Pet ID อยู่แล้ว → เลือกจาก dropdown ได้ทันที
+Passport เป็น **Living / Progressive Identity Record**
 
-**Case B:** ยังไม่มี Pet ID → ระบุเพียงชื่อ สร้าง Parent Reference ได้
-
-### Default / Inheritance
-
-ระบบควรใช้ข้อมูลจาก Group เป็น Default (เช่น Breed = British Shorthair)
-แต่ไม่ควรถือว่าเป็นการยืนยันทางสายพันธุ์อัตโนมัติ
-ผู้ใช้สามารถแก้ไขเฉพาะตัวได้
-
-### Pet ID Creation
-
-```text
-Day 1: PET-0003 (Photo + Birth + Color)
-Month 6: + Microchip
-Year 1: + Certificate
-Year 2: + Biometrics
+```
+Day 1:     Photo + Pet ID + Birth + Basic Info
+ภายหลัง:   + Parent + Health + Documents
+สุดท้าย:   + Biometrics + Certificates + Verified Evidence
 ```
 
-Pet ID เป็น Persistent Identity — ข้อมูลภายหลังเพิ่มได้โดยไม่เปลี่ยน Pet ID
+---
 
-### First Life Journey
+### Part 2 — Home → Context → Role → Work Mode
 
-เมื่อสร้าง Pet ID แล้ว ระบบสร้าง Life Journey Event แรกให้อัตโนมัติ
-Birth Event = First Life Journey Event
+#### 8. Home = Personal Anchor
 
-### Progressive Passport
+> Home คือ Personal Anchor ของผู้ใช้งาน ไม่ใช่ "บ้านที่มีสัตว์"
 
-```text
-Day 1:    ✓ Pet ID ✓ Birth ✓ Photo ✓ Parents ✓ Color  ○ Microchip ○ Biometrics ○ Certificate
-Later:    + Microchip + Vaccination + Medical
-Future:   + Biometrics + Certificate + Ownership
+ผู้ใช้สร้าง Home ได้แม้ยังไม่มีสัตว์เลี้ยงเลย
+
+#### 9. Context
+
+ผู้ใช้ 1 คนมีหลาย Context ได้:
+
+```
+User
+├── Personal Home
+├── Farm A
+├── Farm B
+└── Vet Clinic
 ```
 
-Passport เดิมต้องถูกเติมข้อมูลต่อเนื่อง — ไม่สร้างใหม่ทุกครั้ง
+ไม่ควรออกแบบ Account ให้เป็นประเภทเดียว เพราะคนเดียวมีหลายบทบาทได้
 
-### Farm vs Home vs Vet
+#### 10. Farm / Vet = Workspace / Organization
 
-| Mode | เน้น |
-|---|---|
-| **Home** | Memory, Photo, Story, Birth, Family, Health, Life Journey |
-| **Farm** | Bulk Creation, Litter, Parents, Breed, Pedigree, Certificate |
-| **Vet** | Identity, Medical, Vaccination, Microchip, Documents, Verification |
+Farm และ Vet Clinic เป็น Entity แยกจาก User:
 
-### UX Principle
+```
+Farm A
+├── Owner
+├── Partner
+├── Staff
+└── Vet
+```
 
-> เริ่มจากสิ่งที่รู้วันนี้ แล้วค่อยเติมสิ่งที่รู้ในวันต่อๆ ไป
+ผู้ใช้แต่ละคนเข้าร่วม Entity ด้วย Role ที่แตกต่างกัน
 
-ข้อมูลที่ไม่มี ไม่ควรแสดงเป็น Error ไม่ควรบังคับกรอก ไม่ควรป้องกันการสร้าง Pet ID
+#### 11. Role ไม่เปลี่ยน Identity
 
-### Final Design Principles
+```
+User A
+├── Personal Home → Pet Parent
+├── Farm A → Staff
+└── Vet Clinic → Staff / Vet
+```
 
-1. **Capture first.** เก็บสิ่งที่รู้ก่อน
-2. **Connect later.** เชื่อมข้อมูลเมื่อพร้อม
-3. **Verify when available.** เพิ่มหลักฐานเมื่อมี
-4. **Complete over time.** ค่อยๆ ทำให้ Identity สมบูรณ์ขึ้น
-5. **Never make the user enter the same information twice.**
+Role = ความสัมพันธ์ระหว่าง User กับ Context ไม่ใช่ประเภทถาวรของ Account
 
-> **Every pet can start with an identity. Documents, Biometrics, Microchip and Certificates increase confidence in the identity; they do not create the identity itself.**
+#### 12. Default Context
+
+เมื่อไม่มี Work Context: **Default = Personal Home**
+
+เมื่อเข้าร่วม Farm → เปลี่ยน Default Context ได้:
+
+```
+Home → Joined Farm A → Role: Staff
+Default → Farm A
+→ Today's Tasks, Animals, Birth, Records
+```
+
+#### 13. Default Context ≠ Identity
+
+การเปลี่ยน Default ไม่เปลี่ยนตัวตนหรือ Role
+
+#### 14. Personal Home ต้องคงอยู่เสมอ
+
+```
+User
+├── Personal Home → My Pets
+└── Farm A → Role: Staff
+```
+
+เปลี่ยน Default กลับ Personal Home ได้ตลอด
+Membership ใน Farm A ยังคงอยู่
+
+---
+
+### Part 3 — UX Principle
+
+#### 15. Home = Smart Launcher
+
+Home เชื่อม: **User → Context → Role → Tools**
+
+```
+Staff:    App → Farm A → Today's Work → เริ่มงาน
+Vet:      App → Vet Clinic → Today's Patients → เริ่มงาน
+Pet Parent: App → Personal Home → My Pets → Life Journey
+```
+
+---
+
+### Part 4 — Farm Evidence / Trust
+
+#### 16. Farm สามารถสะสม Evidence ได้
+
+เอกสารที่เก็บได้:
+
+* ทะเบียนพาณิชย์, เอกสารจดทะเบียน, ใบอนุญาต, เอกสารรับรอง
+
+สถานะ: **Uploaded → Digitized → Verified**
+
+#### 17. Trust ไม่ใช่ Binary
+
+ควรแสดง:
+
+* มี Identity → มี Evidence → มีเอกสารประกอบ → มี Verified Evidence
+
+> ระบบไม่ได้รับรองผู้ใช้ แต่ช่วยสร้างโครงสร้างให้สะสมหลักฐานและเพิ่มความน่าเชื่อถือ
+
+---
+
+### Part 5 — Core Philosophy
+
+#### 18. สิ่งที่ควรรักษาเป็น Core
+
+1. Identity สามารถเกิดก่อนข้อมูลสมบูรณ์
+2. Shared Information ไม่ควรถูกกรอกซ้ำ
+3. Birth เป็นจุดเริ่มต้นของ Life Journey
+4. Passport สมบูรณ์ขึ้นตามเวลา
+5. Home = Personal Anchor
+6. Context = สิ่งที่ผู้ใช้เข้าไปทำงาน
+7. Role = ความสัมพันธ์กับ Context
+8. Default Context ลดขั้นตอนการเข้าถึงงาน
+9. Pet Identity ไม่ผูกถาวรกับ Farm หรือ Owner
+10. Evidence เพิ่มความน่าเชื่อถือ แต่ไม่เท่ากับการรับรอง
+
+#### 19. Implementation Philosophy
+
+Prototype V0 = Core Flow ที่ทำงานได้จริงก่อน
+
+หลักการ: **Build → Branch → Compare → Compose → Validate → Merge**
+
+ไม่จำเป็นต้องเลือก A หรือ B ทั้งระบบ — สามารถเลือกจุดที่ดีที่สุดจากแต่ละ Branch
+
+> **Prototype V0 คือ DNA ของระบบ ไม่ใช่กรงที่ปิดกั้นการพัฒนา**
 
 ---
 
