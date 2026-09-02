@@ -32,27 +32,28 @@ interface Home {
 }
 
 // ============================================================
+// ============================================================
 // STORYBOOK SCENE — SVG Illustration Components
 // ============================================================
 
-function Sun() {
+function Sun({ cx = 540, cy = 55 }: { cx?: number; cy?: number }) {
   return (
-    <g className="origin-[380px_60px]" style={{ animation: "sunPulse 8s ease-in-out infinite" }}>
+    <g className="origin-[540px_55px]" style={{ animation: "sunPulse 8s ease-in-out infinite" }}>
       {/* Sun glow */}
-      <circle cx="380" cy="60" r="45" fill="url(#sunGlow)" opacity="0.4" />
+      <circle cx={cx} cy={cy} r="48" fill="url(#sunGlow)" opacity="0.45" />
       {/* Sun body */}
-      <circle cx="380" cy="60" r="28" fill="url(#sunGrad)" />
+      <circle cx={cx} cy={cy} r="28" fill="url(#sunGrad)" />
       {/* Sun rays */}
       {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
         <line
           key={i}
-          x1="380"
-          y1="60"
-          x2={380 + Math.cos((angle * Math.PI) / 180) * 42}
-          y2={60 + Math.sin((angle * Math.PI) / 180) * 42}
+          x1={cx}
+          y1={cy}
+          x2={cx + Math.cos((angle * Math.PI) / 180) * 44}
+          y2={cy + Math.sin((angle * Math.PI) / 180) * 44}
           stroke="#FBBF24"
-          strokeWidth="1.5"
-          opacity="0.5"
+          strokeWidth="1.8"
+          opacity="0.6"
           strokeLinecap="round"
           style={{ animation: `rayPulse 4s ease-in-out ${i * 0.5}s infinite` }}
         />
@@ -65,13 +66,13 @@ function Cloud({ x, y, scale = 1, delay = 0 }: { x: number; y: number; scale?: n
   return (
     <g
       transform={`translate(${x}, ${y}) scale(${scale})`}
-      style={{ animation: `cloudDrift 40s linear ${delay}s infinite` }}
-      opacity="0.6"
+      style={{ animation: `cloudDrift 45s linear ${delay}s infinite` }}
+      opacity="0.65"
     >
-      <ellipse cx="0" cy="0" rx="30" ry="12" fill="white" />
-      <ellipse cx="-18" cy="2" rx="18" ry="10" fill="white" />
-      <ellipse cx="18" cy="2" rx="20" ry="10" fill="white" />
-      <ellipse cx="8" cy="-4" rx="16" ry="10" fill="white" />
+      <ellipse cx="0" cy="0" rx="32" ry="13" fill="white" />
+      <ellipse cx="-18" cy="2" rx="19" ry="11" fill="white" />
+      <ellipse cx="18" cy="2" rx="22" ry="11" fill="white" />
+      <ellipse cx="8" cy="-5" rx="17" ry="11" fill="white" />
     </g>
   );
 }
@@ -98,14 +99,14 @@ function Tree({ x, y, scale = 1 }: { x: number; y: number; scale?: number }) {
   return (
     <g transform={`translate(${x}, ${y}) scale(${scale})`}>
       {/* Trunk */}
-      <rect x="-4" y="-5" width="8" height="25" rx="3" fill="#8B6F5E" />
+      <rect x="-4" y="-5" width="8" height="26" rx="3" fill="#8B6F5E" />
       {/* Foliage layers */}
-      <ellipse cx="0" cy="-18" rx="20" ry="16" fill="#5B8C5A" />
-      <ellipse cx="-8" cy="-14" rx="14" ry="12" fill="#6BA368" />
-      <ellipse cx="8" cy="-14" rx="14" ry="12" fill="#6BA368" />
-      <ellipse cx="0" cy="-26" rx="12" ry="10" fill="#7BC47A" />
+      <ellipse cx="0" cy="-18" rx="22" ry="17" fill="#5B8C5A" />
+      <ellipse cx="-9" cy="-14" rx="15" ry="13" fill="#6BA368" />
+      <ellipse cx="9" cy="-14" rx="15" ry="13" fill="#6BA368" />
+      <ellipse cx="0" cy="-27" rx="13" ry="11" fill="#7BC47A" />
       {/* Leaf shimmer */}
-      <ellipse cx="5" cy="-22" rx="4" ry="3" fill="#8FD88E" opacity="0.6"
+      <ellipse cx="5" cy="-22" rx="5" ry="3.5" fill="#8FD88E" opacity="0.65"
         style={{ animation: "leafShimmer 3s ease-in-out infinite" }} />
     </g>
   );
@@ -147,68 +148,90 @@ function GrassBlade({ x, y, height = 12, delay = 0 }: { x: number; y: number; he
   );
 }
 
-function House({ onClick }: { onClick: () => void }) {
+function House({ x, y, onClick }: { x: number; y: number; onClick: () => void }) {
   return (
     <g
+      transform={`translate(${x}, ${y})`}
       onClick={onClick}
-      className="cursor-pointer"
+      className="cursor-pointer group"
       role="button"
       aria-label="เข้าสู่บ้านของฉัน"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
     >
-      {/* House glow (subtle) */}
-      <ellipse cx="200" cy="248" rx="75" ry="12" fill="#FBBF24" opacity="0.15"
+      {/* House glow (subtle aura) */}
+      <ellipse cx="60" cy="98" rx="80" ry="14" fill="#FBBF24" opacity="0.2"
         style={{ animation: "houseGlow 4s ease-in-out infinite" }} />
 
-      {/* House body */}
-      <rect x="155" y="195" width="90" height="55" rx="3" fill="#F5E6D3" />
-      <rect x="155" y="195" width="90" height="55" rx="3" fill="url(#houseShadow)" />
-
-      {/* Roof */}
-      <polygon points="145,195 200,158 255,195" fill="#C0564B" />
-      <polygon points="145,195 200,158 255,195" fill="url(#roofGrad)" />
-      {/* Roof shadow */}
-      <polygon points="150,195 200,162 250,195" fill="#A84439" opacity="0.3" />
-
       {/* Chimney */}
-      <rect x="225" y="165" width="14" height="22" rx="2" fill="#8B6F5E" />
-      {/* Smoke */}
-      <circle cx="232" cy="155" r="4" fill="#D4C5B5" opacity="0.3"
+      <rect x="88" y="10" width="16" height="26" rx="2" fill="#8B6F5E" />
+      {/* Chimney Smoke */}
+      <circle cx="96" cy="0" r="4.5" fill="#D4C5B5" opacity="0.3"
         style={{ animation: "smokeRise 5s ease-in-out infinite" }} />
-      <circle cx="236" cy="145" r="3" fill="#D4C5B5" opacity="0.2"
+      <circle cx="100" cy="-12" r="3.5" fill="#D4C5B5" opacity="0.2"
         style={{ animation: "smokeRise 5s ease-in-out 1.5s infinite" }} />
+      <circle cx="95" cy="-22" r="2.5" fill="#D4C5B5" opacity="0.1"
+        style={{ animation: "smokeRise 5s ease-in-out 3s infinite" }} />
 
-      {/* Door */}
-      <rect x="188" y="218" width="24" height="32" rx="12" fill="#8B5E3C" />
-      <rect x="190" y="220" width="20" height="28" rx="10" fill="#A0704E" />
-      <circle cx="204" cy="234" r="2" fill="#FBBF24" />
+      {/* House Body */}
+      <rect x="10" y="44" width="100" height="56" rx="4" fill="#FAF2E8" stroke="#E2D0BE" strokeWidth="1" />
+      <rect x="10" y="44" width="100" height="56" rx="4" fill="url(#houseShadow)" />
 
-      {/* Windows */}
-      <rect x="163" y="205" width="18" height="16" rx="2" fill="#FBBF24" opacity="0.8" />
-      <rect x="163" y="205" width="18" height="16" rx="2" fill="url(#windowGlow)"
-        style={{ animation: "windowFlicker 6s ease-in-out infinite" }} />
-      <line x1="172" y1="205" x2="172" y2="221" stroke="#D4A574" strokeWidth="1.5" />
-      <line x1="163" y1="213" x2="181" y2="213" stroke="#D4A574" strokeWidth="1.5" />
+      {/* Cozy Roof with Cat-Ear Silhouette Accent */}
+      <polygon points="0,46 60,6 120,46" fill="#C85A48" />
+      <polygon points="0,46 60,6 120,46" fill="url(#roofGrad)" />
+      {/* Cat Ears on Roof Ridge */}
+      <polygon points="28,26 38,4 52,20" fill="#C85A48" />
+      <polygon points="28,26 38,4 52,20" fill="url(#roofGrad)" />
+      <polygon points="32,24 39,9 49,19" fill="#FFAAA6" opacity="0.85" />
+      <polygon points="68,20 82,4 92,26" fill="#C85A48" />
+      <polygon points="68,20 82,4 92,26" fill="url(#roofGrad)" />
+      <polygon points="71,19 81,9 88,24" fill="#FFAAA6" opacity="0.85" />
+      {/* Roof Edge Trim */}
+      <line x1="-2" y1="47" x2="60" y2="5" stroke="#E57362" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="60" y1="5" x2="122" y2="47" stroke="#E57362" strokeWidth="2.5" strokeLinecap="round" />
 
-      <rect x="219" y="205" width="18" height="16" rx="2" fill="#FBBF24" opacity="0.8" />
-      <rect x="219" y="205" width="18" height="16" rx="2" fill="url(#windowGlow)"
-        style={{ animation: "windowFlicker 6s ease-in-out 2s infinite" }} />
-      <line x1="228" y1="205" x2="228" y2="221" stroke="#D4A574" strokeWidth="1.5" />
-      <line x1="219" y1="213" x2="237" y2="213" stroke="#D4A574" strokeWidth="1.5" />
+      {/* Attic Round Window */}
+      <circle cx="60" cy="27" r="9" fill="#FDE68A" stroke="#8B5E3C" strokeWidth="1.5" />
+      <circle cx="60" cy="27" r="7" fill="url(#windowGlow)" style={{ animation: "windowFlicker 5s ease-in-out 1s infinite" }} />
+      <line x1="60" y1="20" x2="60" y2="34" stroke="#8B5E3C" strokeWidth="1" />
+      <line x1="53" y1="27" x2="67" y2="27" stroke="#8B5E3C" strokeWidth="1" />
 
+      {/* Front Door */}
+      <rect x="46" y="62" width="28" height="38" rx="14" fill="#8B5E3C" />
+      <rect x="48" y="65" width="24" height="34" rx="12" fill="#A0704E" />
+      {/* Doorknob */}
+      <circle cx="66" cy="82" r="2.2" fill="#FBBF24" />
       {/* Doorstep */}
-      <rect x="184" y="248" width="32" height="4" rx="2" fill="#D4A574" />
+      <rect x="41" y="98" width="38" height="5" rx="2.5" fill="#D4A574" />
 
-      {/* Sparkles around house */}
-      <circle cx="145" cy="185" r="1.5" fill="#FBBF24"
-        style={{ animation: "sparkle 3s ease-in-out 0s infinite" }} />
-      <circle cx="260" cy="190" r="1.5" fill="#FBBF24"
-        style={{ animation: "sparkle 3s ease-in-out 1s infinite" }} />
-      <circle cx="150" cy="210" r="1" fill="#FBBF24"
-        style={{ animation: "sparkle 3s ease-in-out 2s infinite" }} />
-      <circle cx="258" cy="220" r="1" fill="#FBBF24"
-        style={{ animation: "sparkle 3s ease-in-out 0.5s infinite" }} />
+      {/* Left Window */}
+      <rect x="18" y="54" width="20" height="19" rx="3" fill="#FDE68A" stroke="#8B5E3C" strokeWidth="1" />
+      <rect x="18" y="54" width="20" height="19" rx="3" fill="url(#windowGlow)" style={{ animation: "windowFlicker 6s ease-in-out infinite" }} />
+      <line x1="28" y1="54" x2="28" y2="73" stroke="#8B5E3C" strokeWidth="1" />
+      <line x1="18" y1="63" x2="38" y2="63" stroke="#8B5E3C" strokeWidth="1" />
+      {/* Left Window Flower Box */}
+      <rect x="16" y="72" width="24" height="4" rx="1.5" fill="#8B5E3C" />
+      <circle cx="20" cy="71" r="2" fill="#F472B6" />
+      <circle cx="28" cy="70" r="2" fill="#FB923C" />
+      <circle cx="36" cy="71" r="2" fill="#F472B6" />
+
+      {/* Right Window */}
+      <rect x="82" y="54" width="20" height="19" rx="3" fill="#FDE68A" stroke="#8B5E3C" strokeWidth="1" />
+      <rect x="82" y="54" width="20" height="19" rx="3" fill="url(#windowGlow)" style={{ animation: "windowFlicker 6s ease-in-out 2s infinite" }} />
+      <line x1="92" y1="54" x2="92" y2="73" stroke="#8B5E3C" strokeWidth="1" />
+      <line x1="82" y1="63" x2="102" y2="63" stroke="#8B5E3C" strokeWidth="1" />
+      {/* Right Window Flower Box */}
+      <rect x="80" y="72" width="24" height="4" rx="1.5" fill="#8B5E3C" />
+      <circle cx="84" cy="71" r="2" fill="#C084FC" />
+      <circle cx="92" cy="70" r="2" fill="#FBBF24" />
+      <circle cx="100" cy="71" r="2" fill="#C084FC" />
+
+      {/* Sparkles dancing around house */}
+      <circle cx="-5" cy="35" r="2" fill="#FBBF24" style={{ animation: "sparkle 3s ease-in-out 0s infinite" }} />
+      <circle cx="125" cy="40" r="2" fill="#FBBF24" style={{ animation: "sparkle 3s ease-in-out 1s infinite" }} />
+      <circle cx="5" cy="70" r="1.5" fill="#FBBF24" style={{ animation: "sparkle 3s ease-in-out 2s infinite" }} />
+      <circle cx="120" cy="75" r="1.5" fill="#FBBF24" style={{ animation: "sparkle 3s ease-in-out 0.5s infinite" }} />
     </g>
   );
 }
@@ -634,7 +657,7 @@ export default function HomePage() {
       {/* ===== WELCOME / ENTRY SCREEN (Nesting Mode — Storybook Scene) ===== */}
       {viewMode === "nesting" && (
         <div
-          className="min-h-screen relative overflow-hidden"
+          className="min-h-screen relative overflow-hidden flex flex-col justify-between"
           style={{
             background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 30%, #E8C99B 60%, #D4B896 100%)",
             animation: transitionPhase === "exiting"
@@ -642,182 +665,17 @@ export default function HomePage() {
               : "fadeInUp 0.8s ease-out",
           }}
         >
-          {/* ===== SKY & SCENE ===== */}
-          <div className="absolute inset-0 pointer-events-none">
+          {/* ===== SKY & SCENE (Right-focused Asymmetrical 16:9 Illustration) ===== */}
+          <div className="absolute inset-0">
             <svg
-              viewBox="0 0 480 360"
-              className="w-full h-full"
-              preserveAspectRatio="xMidYMid slice"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <radialGradient id="sunGlowN" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
-                </radialGradient>
-                <radialGradient id="sunGradN" cx="40%" cy="40%" r="50%">
-                  <stop offset="0%" stopColor="#FDE68A" />
-                  <stop offset="100%" stopColor="#FBBF24" />
-                </radialGradient>
-                <linearGradient id="roofGradN" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#D4604E" />
-                  <stop offset="100%" stopColor="#A84439" />
-                </linearGradient>
-                <linearGradient id="houseShadowN" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="transparent" />
-                  <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
-                </linearGradient>
-                <radialGradient id="windowGlowN" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.5" />
-                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-
-              {/* Background hills */}
-              <ellipse cx="120" cy="310" rx="200" ry="60" fill="#C5D4A0" opacity="0.5" />
-              <ellipse cx="380" cy="320" rx="180" ry="50" fill="#B8C993" opacity="0.4" />
-
-              {/* Sun */}
-              <Sun />
-
-              {/* Clouds */}
-              <Cloud x={60} y={40} scale={0.8} delay={0} />
-              <Cloud x={300} y={25} scale={0.6} delay={8} />
-
-              {/* Birds */}
-              <Bird x={100} y={50} delay={0} />
-              <Bird x={320} y={35} delay={3} />
-
-              {/* Trees background */}
-              <Tree x={50} y={275} scale={0.9} />
-              <Tree x={420} y={270} scale={1.1} />
-              <Tree x={350} y={280} scale={0.7} />
-
-              {/* Ground */}
-              <ellipse cx="240" cy="310" rx="280" ry="55" fill="#A8C686" />
-              <ellipse cx="240" cy="315" rx="260" ry="45" fill="#96B878" />
-
-              {/* Path to house */}
-              <path d="M200,310 Q195,290 198,260" fill="none" stroke="#D4B896" strokeWidth="6" strokeLinecap="round" opacity="0.6" />
-
-              {/* Flowers */}
-              <Flower x={80} y={300} color="#F472B6" delay={0} />
-              <Flower x={100} y={305} color="#FB923C" delay={1} />
-              <Flower x={340} y={298} color="#C084FC" delay={0.5} />
-              <Flower x={370} y={303} color="#F472B6" delay={1.5} />
-              <Flower x={150} y={308} color="#FBBF24" delay={2} />
-
-              {/* Grass */}
-              <GrassBlade x={70} y={308} height={10} delay={0} />
-              <GrassBlade x={90} y={310} height={8} delay={0.3} />
-              <GrassBlade x={350} y={306} height={11} delay={0.6} />
-              <GrassBlade x={380} y={309} height={9} delay={0.9} />
-              <GrassBlade x={130} y={312} height={7} delay={1.2} />
-              <GrassBlade x={400} y={307} height={10} delay={1.5} />
-
-              {/* HOUSE — Interactive Hotspot (Primary CTA) */}
-              <House onClick={handleEnterHouse} />
-
-              {/* Cat near door (looking at user) */}
-              <CatNearDoor x={268} y={268} />
-
-              {/* Foreground flowers (depth) */}
-              <Flower x={30} y={340} color="#F472B6" delay={0.8} />
-              <Flower x={55} y={345} color="#FB923C" delay={1.8} />
-              <Flower x={440} y={338} color="#C084FC" delay={1.2} />
-              <Flower x={460} y={343} color="#FBBF24" delay={2.2} />
-
-              {/* Foreground grass (depth) */}
-              <GrassBlade x={20} y={348} height={14} delay={0.4} />
-              <GrassBlade x={40} y={350} height={12} delay={0.7} />
-              <GrassBlade x={445} y={346} height={13} delay={1.0} />
-              <GrassBlade x={465} y={349} height={11} delay={1.3} />
-            </svg>
-          </div>
-
-          {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
-          <div className="relative z-10 min-h-screen flex flex-col">
-            <div className="flex-1 flex items-center">
-              <div className="px-6 pt-16 pb-40 md:px-12 lg:px-20 max-w-lg"
-                style={{ animation: "fadeInUp 1s ease-out" }}>
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-amber-900 mb-2"
-                  style={{ textShadow: "0 2px 8px rgba(139,69,19,0.1)" }}>
-                  MEOW WORLD
-                </h1>
-                <p className="text-base md:text-lg text-amber-800/80 leading-relaxed font-medium">
-                  ยินดีต้อนรับสู่โลกของเจ้าเหมียว
-                </p>
-              </div>
-            </div>
-
-            {/* ===== BOTTOM NAVIGATION — Minimal Translucent Glass ===== */}
-            <div className="fixed bottom-0 left-0 right-0 z-30 pb-safe">
-              <div className="mx-auto max-w-md px-6 pb-6">
-                <div
-                  className="flex items-center justify-around py-3 px-4 rounded-2xl"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.25)",
-                    backdropFilter: "blur(16px)",
-                    WebkitBackdropFilter: "blur(16px)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                    boxShadow: "0 4px 24px rgba(139, 69, 19, 0.08)",
-                  }}
-                >
-                  <button
-                    onClick={() => router.push("/pets/birth")}
-                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
-                  >
-                    <span className="text-xl">+</span>
-                    <span className="text-[11px] font-semibold text-amber-900/70">เพิ่มสมาชิก</span>
-                  </button>
-
-                  <div className="w-px h-8 bg-amber-900/10" />
-
-                  <button
-                    onClick={() => setShowQRScanner(true)}
-                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
-                  >
-                    <svg className="w-5 h-5 text-amber-900/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="2" width="8" height="8" rx="1" />
-                      <rect x="14" y="2" width="8" height="8" rx="1" />
-                      <rect x="2" y="14" width="8" height="8" rx="1" />
-                      <path d="M14 14h8v8h-8z" />
-                      <path d="M18 14v2" />
-                      <path d="M18 18v2" />
-                      <path d="M14 18h2" />
-                    </svg>
-                    <span className="text-[11px] font-semibold text-amber-900/70">สแกน QR</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== LIVING MODE — Storybook Scene ===== */}
-      {viewMode === "living" && (
-        <div
-          className="min-h-screen relative overflow-hidden"
-          style={{
-            background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 30%, #E8C99B 60%, #D4B896 100%)",
-            animation: transitionPhase === "entering"
-              ? "fadeSlideIn 0.6s ease-out"
-              : undefined,
-          }}
-        >
-
-          {/* ===== SKY & SCENE ===== */}
-          <div className="absolute inset-0 pointer-events-none">
-            <svg
-              viewBox="0 0 480 360"
+              viewBox="0 0 640 360"
               className="w-full h-full"
               preserveAspectRatio="xMidYMid slice"
               xmlns="http://www.w3.org/2000/svg"
             >
               <defs>
                 <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.6" />
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.65" />
                   <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
                 </radialGradient>
                 <radialGradient id="sunGrad" cx="40%" cy="40%" r="50%">
@@ -833,164 +691,308 @@ export default function HomePage() {
                   <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
                 </linearGradient>
                 <radialGradient id="windowGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.5" />
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.6" />
                   <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
                 </radialGradient>
               </defs>
 
-              {/* Background hills */}
-              <ellipse cx="120" cy="310" rx="200" ry="60" fill="#C5D4A0" opacity="0.5" />
-              <ellipse cx="380" cy="320" rx="180" ry="50" fill="#B8C993" opacity="0.4" />
+              {/* Background rolling hills */}
+              <ellipse cx="160" cy="320" rx="260" ry="70" fill="#C5D4A0" opacity="0.5" />
+              <ellipse cx="480" cy="310" rx="240" ry="60" fill="#B8C993" opacity="0.4" />
 
-              {/* Sun */}
-              <Sun />
+              {/* Sun (Right Top) */}
+              <Sun cx={540} cy={55} />
 
-              {/* Clouds */}
-              <Cloud x={60} y={40} scale={0.8} delay={0} />
-              <Cloud x={300} y={25} scale={0.6} delay={8} />
+              {/* Clouds drifting */}
+              <Cloud x={100} y={35} scale={0.75} delay={0} />
+              <Cloud x={380} y={25} scale={0.6} delay={8} />
 
-              {/* Birds */}
-              <Bird x={100} y={50} delay={0} />
-              <Bird x={320} y={35} delay={3} />
+              {/* Birds flying */}
+              <Bird x={220} y={45} delay={0} />
+              <Bird x={480} y={35} delay={3} />
 
-              {/* Trees background */}
-              <Tree x={50} y={275} scale={0.9} />
-              <Tree x={420} y={270} scale={1.1} />
-              <Tree x={350} y={280} scale={0.7} />
+              {/* Background Trees framing village */}
+              <Tree x={310} y={245} scale={0.9} />
+              <Tree x={600} y={225} scale={1.15} />
+              <Tree x={440} y={180} scale={0.7} />
 
-              {/* Ground */}
-              <ellipse cx="240" cy="310" rx="280" ry="55" fill="#A8C686" />
-              <ellipse cx="240" cy="315" rx="260" ry="45" fill="#96B878" />
+              {/* Ground & Grass */}
+              <ellipse cx="360" cy="305" rx="360" ry="65" fill="#A8C686" />
+              <ellipse cx="360" cy="312" rx="340" ry="55" fill="#96B878" />
 
-              {/* Path to house */}
-              <path d="M200,310 Q195,290 198,260" fill="none" stroke="#D4B896" strokeWidth="6" strokeLinecap="round" opacity="0.6" />
+              {/* Winding stone path to house */}
+              <path d="M380,340 Q430,295 485,250" fill="none" stroke="#D4B896" strokeWidth="8" strokeLinecap="round" opacity="0.6" />
 
-              {/* Flowers */}
-              <Flower x={80} y={300} color="#F472B6" delay={0} />
-              <Flower x={100} y={305} color="#FB923C" delay={1} />
-              <Flower x={340} y={298} color="#C084FC" delay={0.5} />
-              <Flower x={370} y={303} color="#F472B6" delay={1.5} />
-              <Flower x={150} y={308} color="#FBBF24" delay={2} />
+              {/* Midground Flowers & Grass */}
+              <Flower x={140} y={300} color="#F472B6" delay={0} />
+              <Flower x={170} y={305} color="#FB923C" delay={1} />
+              <Flower x={330} y={292} color="#C084FC" delay={0.5} />
+              <Flower x={580} y={298} color="#F472B6" delay={1.5} />
+              <Flower x={230} y={308} color="#FBBF24" delay={2} />
 
-              {/* Grass */}
-              <GrassBlade x={70} y={308} height={10} delay={0} />
-              <GrassBlade x={90} y={310} height={8} delay={0.3} />
-              <GrassBlade x={350} y={306} height={11} delay={0.6} />
-              <GrassBlade x={380} y={309} height={9} delay={0.9} />
-              <GrassBlade x={130} y={312} height={7} delay={1.2} />
-              <GrassBlade x={400} y={307} height={10} delay={1.5} />
+              <GrassBlade x={130} y={308} height={10} delay={0} />
+              <GrassBlade x={160} y={310} height={8} delay={0.3} />
+              <GrassBlade x={320} y={300} height={11} delay={0.6} />
+              <GrassBlade x={590} y={304} height={9} delay={0.9} />
 
-              {/* HOUSE — Interactive Hotspot */}
-              <House onClick={handleEnterHouse} />
+              {/* HOUSE — Primary Call-To-Action (Interactive Hotspot) */}
+              <House x={425} y={150} onClick={handleEnterHouse} />
 
-              {/* Family near house */}
-              <Family x={130} y={275} />
+              {/* Cat near front door looking at user */}
+              <CatNearDoor x={515} y={250} />
 
-              {/* Cat near door (looking at user) */}
-              <CatNearDoor x={268} y={268} />
+              {/* Foreground Flowers (Depth layer) */}
+              <Flower x={40} y={340} color="#F472B6" delay={0.8} />
+              <Flower x={75} y={346} color="#FB923C" delay={1.8} />
+              <Flower x={580} y={338} color="#C084FC" delay={1.2} />
+              <Flower x={610} y={344} color="#FBBF24" delay={2.2} />
 
-              {/* Cat sitting on grass */}
-              <Cat x={320} y={285} delay={0} />
-
-              {/* Foreground flowers (depth) */}
-              <Flower x={30} y={340} color="#F472B6" delay={0.8} />
-              <Flower x={55} y={345} color="#FB923C" delay={1.8} />
-              <Flower x={440} y={338} color="#C084FC" delay={1.2} />
-              <Flower x={460} y={343} color="#FBBF24" delay={2.2} />
-
-              {/* Foreground grass (depth) */}
-              <GrassBlade x={20} y={348} height={14} delay={0.4} />
-              <GrassBlade x={40} y={350} height={12} delay={0.7} />
-              <GrassBlade x={445} y={346} height={13} delay={1.0} />
-              <GrassBlade x={465} y={349} height={11} delay={1.3} />
+              {/* Foreground Grass (Depth layer) */}
+              <GrassBlade x={30} y={348} height={14} delay={0.4} />
+              <GrassBlade x={65} y={350} height={12} delay={0.7} />
+              <GrassBlade x={570} y={346} height={13} delay={1.0} />
+              <GrassBlade x={620} y={349} height={11} delay={1.3} />
             </svg>
           </div>
 
           {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
-          <div className="relative z-10 min-h-screen flex flex-col">
-            <div className="flex-1 flex items-center">
-              <div className="px-6 pt-16 pb-40 md:px-12 lg:px-20 max-w-lg"
-                style={{ animation: "fadeInUp 1s ease-out" }}>
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-amber-900 mb-1"
-                  style={{ textShadow: "0 2px 8px rgba(139,69,19,0.1)" }}>
-                  MEOW WORLD
-                </h1>
-                {home && (
-                  <p className="text-sm md:text-base font-semibold text-amber-700/70 mb-2 flex items-center gap-1.5">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-600/40" />
-                    {home.name}
-                  </p>
-                )}
-                <p className="text-base md:text-lg text-amber-800/80 leading-relaxed font-medium">
-                  ยินดีต้อนรับสู่โลกของเจ้าเหมียว
-                </p>
+          <div className="relative z-10 pt-8 px-6 md:pt-14 md:px-12 lg:px-20 max-w-lg pointer-events-auto"
+            style={{ animation: "fadeInUp 1s ease-out" }}>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-amber-900 tracking-tight mb-2"
+              style={{ textShadow: "0 2px 10px rgba(139,69,19,0.12)" }}>
+              MEOW WORLD
+            </h1>
+            <p className="text-base md:text-lg text-amber-900/80 font-medium leading-relaxed">
+              ยินดีต้อนรับสู่โลกของเจ้าเหมียว
+            </p>
+          </div>
 
-                {/* Pet avatars */}
-                {pets.length > 0 && (
-                  <div className="mt-8 flex items-center gap-3" style={{ animation: "fadeInUp 1.2s ease-out 0.3s both" }}>
-                    <div className="flex -space-x-3">
-                      {pets.slice(0, 5).map((pet, i) => (
-                        <div
-                          key={pet.id}
-                          className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-lg overflow-hidden"
-                          style={{ backgroundColor: ["#FDE8C8", "#E8D5C4", "#D4E8D0", "#E8D0E0", "#D0E0E8"][i % 5] }}
-                        >
-                          {pet.avatar_url ? (
-                            <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
-                          ) : (
-                            "🐱"
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-amber-900">{pets.length} สมาชิก</p>
-                      <p className="text-xs text-amber-700/60">{events.length} เรื่องราว</p>
-                    </div>
-                  </div>
-                )}
+          {/* ===== BOTTOM NAVIGATION — Minimal Translucent Glass ===== */}
+          <div className="relative z-30 pb-6 px-6 pointer-events-auto">
+            <div className="mx-auto max-w-sm">
+              <div
+                className="flex items-center justify-around py-2.5 px-4 rounded-2xl"
+                style={{
+                  background: "rgba(255, 255, 255, 0.28)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  border: "1px solid rgba(255, 255, 255, 0.4)",
+                  boxShadow: "0 8px 32px rgba(139, 69, 19, 0.08)",
+                }}
+              >
+                <button
+                  onClick={() => router.push("/pets/birth")}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                >
+                  <span className="text-base font-extrabold leading-none">＋</span>
+                  <span>เพิ่มสมาชิก</span>
+                </button>
+
+                <div className="w-px h-6 bg-amber-900/15" />
+
+                <button
+                  onClick={() => setShowQRScanner(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                >
+                  <svg className="w-4 h-4 text-amber-900/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
+                  <span>สแกน QR</span>
+                </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* ===== BOTTOM NAVIGATION — Glass Style ===== */}
-            <div className="fixed bottom-0 left-0 right-0 z-30 pb-safe">
-              <div className="mx-auto max-w-md px-6 pb-6">
-                <div
-                  className="flex items-center justify-around py-3 px-4 rounded-2xl"
-                  style={{
-                    background: "rgba(255, 255, 255, 0.25)",
-                    backdropFilter: "blur(16px)",
-                    WebkitBackdropFilter: "blur(16px)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                    boxShadow: "0 4px 24px rgba(139, 69, 19, 0.08)",
-                  }}
-                >
-                  <button
-                    onClick={() => router.push("/pets/birth")}
-                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
-                  >
-                    <span className="text-xl">+</span>
-                    <span className="text-[11px] font-semibold text-amber-900/70">เพิ่มสมาชิก</span>
-                  </button>
+      {/* ===== LIVING MODE — Storybook Scene ===== */}
+      {viewMode === "living" && (
+        <div
+          className="min-h-screen relative overflow-hidden flex flex-col justify-between"
+          style={{
+            background: "linear-gradient(180deg, #FDE8C8 0%, #F9D5A0 30%, #E8C99B 60%, #D4B896 100%)",
+            animation: transitionPhase === "entering"
+              ? "fadeSlideIn 0.6s ease-out"
+              : undefined,
+          }}
+        >
+          {/* ===== SKY & SCENE (Living Village Scene) ===== */}
+          <div className="absolute inset-0">
+            <svg
+              viewBox="0 0 640 360"
+              className="w-full h-full"
+              preserveAspectRatio="xMidYMid slice"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.65" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="sunGrad" cx="40%" cy="40%" r="50%">
+                  <stop offset="0%" stopColor="#FDE68A" />
+                  <stop offset="100%" stopColor="#FBBF24" />
+                </radialGradient>
+                <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#D4604E" />
+                  <stop offset="100%" stopColor="#A84439" />
+                </linearGradient>
+                <linearGradient id="houseShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="transparent" />
+                  <stop offset="100%" stopColor="rgba(0,0,0,0.08)" />
+                </linearGradient>
+                <radialGradient id="windowGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+              </defs>
 
-                  <div className="w-px h-8 bg-amber-900/10" />
+              {/* Background rolling hills */}
+              <ellipse cx="160" cy="320" rx="260" ry="70" fill="#C5D4A0" opacity="0.5" />
+              <ellipse cx="480" cy="310" rx="240" ry="60" fill="#B8C993" opacity="0.4" />
 
-                  <button
-                    onClick={() => setShowQRScanner(true)}
-                    className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl transition hover:bg-white/20 active:scale-95"
-                  >
-                    <svg className="w-5 h-5 text-amber-900/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="2" width="8" height="8" rx="1" />
-                      <rect x="14" y="2" width="8" height="8" rx="1" />
-                      <rect x="2" y="14" width="8" height="8" rx="1" />
-                      <path d="M14 14h8v8h-8z" />
-                      <path d="M18 14v2" />
-                      <path d="M18 18v2" />
-                      <path d="M14 18h2" />
-                    </svg>
-                    <span className="text-[11px] font-semibold text-amber-900/70">สแกน QR</span>
-                  </button>
+              {/* Sun */}
+              <Sun cx={540} cy={55} />
+
+              {/* Clouds */}
+              <Cloud x={100} y={35} scale={0.75} delay={0} />
+              <Cloud x={380} y={25} scale={0.6} delay={8} />
+
+              {/* Birds */}
+              <Bird x={220} y={45} delay={0} />
+              <Bird x={480} y={35} delay={3} />
+
+              {/* Trees */}
+              <Tree x={310} y={245} scale={0.9} />
+              <Tree x={600} y={225} scale={1.15} />
+              <Tree x={440} y={180} scale={0.7} />
+
+              {/* Ground */}
+              <ellipse cx="360" cy="305" rx="360" ry="65" fill="#A8C686" />
+              <ellipse cx="360" cy="312" rx="340" ry="55" fill="#96B878" />
+
+              {/* Winding path to house */}
+              <path d="M380,340 Q430,295 485,250" fill="none" stroke="#D4B896" strokeWidth="8" strokeLinecap="round" opacity="0.6" />
+
+              {/* Midground Flowers */}
+              <Flower x={140} y={300} color="#F472B6" delay={0} />
+              <Flower x={170} y={305} color="#FB923C" delay={1} />
+              <Flower x={330} y={292} color="#C084FC" delay={0.5} />
+              <Flower x={580} y={298} color="#F472B6" delay={1.5} />
+              <Flower x={230} y={308} color="#FBBF24" delay={2} />
+
+              {/* Grass */}
+              <GrassBlade x={130} y={308} height={10} delay={0} />
+              <GrassBlade x={160} y={310} height={8} delay={0.3} />
+              <GrassBlade x={320} y={300} height={11} delay={0.6} />
+              <GrassBlade x={590} y={304} height={9} delay={0.9} />
+
+              {/* HOUSE — Interactive Hotspot */}
+              <House x={425} y={150} onClick={handleEnterHouse} />
+
+              {/* Family near house */}
+              <Family x={365} y={265} />
+
+              {/* Cat near door looking at user */}
+              <CatNearDoor x={515} y={250} />
+
+              {/* Playful Cat in yard */}
+              <Cat x={565} y={275} delay={0} />
+
+              {/* Foreground Flowers (Depth layer) */}
+              <Flower x={40} y={340} color="#F472B6" delay={0.8} />
+              <Flower x={75} y={346} color="#FB923C" delay={1.8} />
+              <Flower x={580} y={338} color="#C084FC" delay={1.2} />
+              <Flower x={610} y={344} color="#FBBF24" delay={2.2} />
+
+              {/* Foreground Grass (Depth layer) */}
+              <GrassBlade x={30} y={348} height={14} delay={0.4} />
+              <GrassBlade x={65} y={350} height={12} delay={0.7} />
+              <GrassBlade x={570} y={346} height={13} delay={1.0} />
+              <GrassBlade x={620} y={349} height={11} delay={1.3} />
+            </svg>
+          </div>
+
+          {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
+          <div className="relative z-10 pt-8 px-6 md:pt-14 md:px-12 lg:px-20 max-w-lg pointer-events-auto"
+            style={{ animation: "fadeInUp 1s ease-out" }}>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-amber-900 tracking-tight mb-1"
+              style={{ textShadow: "0 2px 10px rgba(139,69,19,0.12)" }}>
+              MEOW WORLD
+            </h1>
+            {home && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 text-xs md:text-sm font-semibold text-amber-900 mb-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {home.name}
+              </div>
+            )}
+            <p className="text-base md:text-lg text-amber-900/80 font-medium leading-relaxed">
+              ยินดีต้อนรับสู่โลกของเจ้าเหมียว
+            </p>
+
+            {/* Pet avatars summary */}
+            {pets.length > 0 && (
+              <div className="mt-5 flex items-center gap-3" style={{ animation: "fadeInUp 1.2s ease-out 0.2s both" }}>
+                <div className="flex -space-x-2.5">
+                  {pets.slice(0, 5).map((pet, i) => (
+                    <div
+                      key={pet.id}
+                      className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-lg overflow-hidden bg-amber-100"
+                    >
+                      {pet.avatar_url ? (
+                        <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                      ) : (
+                        "🐱"
+                      )}
+                    </div>
+                  ))}
                 </div>
+                <div>
+                  <p className="text-sm font-bold text-amber-900">{pets.length} สมาชิก</p>
+                  <p className="text-xs text-amber-800/70 font-medium">{events.length} เรื่องราว</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ===== BOTTOM NAVIGATION — Minimal Translucent Glass ===== */}
+          <div className="relative z-30 pb-6 px-6 pointer-events-auto">
+            <div className="mx-auto max-w-sm">
+              <div
+                className="flex items-center justify-around py-2.5 px-4 rounded-2xl"
+                style={{
+                  background: "rgba(255, 255, 255, 0.28)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  border: "1px solid rgba(255, 255, 255, 0.4)",
+                  boxShadow: "0 8px 32px rgba(139, 69, 19, 0.08)",
+                }}
+              >
+                <button
+                  onClick={() => router.push("/pets/birth")}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                >
+                  <span className="text-base font-extrabold leading-none">＋</span>
+                  <span>เพิ่มสมาชิก</span>
+                </button>
+
+                <div className="w-px h-6 bg-amber-900/15" />
+
+                <button
+                  onClick={() => setShowQRScanner(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                >
+                  <svg className="w-4 h-4 text-amber-900/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
+                  <span>สแกน QR</span>
+                </button>
               </div>
             </div>
           </div>
