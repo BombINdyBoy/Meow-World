@@ -756,51 +756,58 @@ export default function HomePage() {
           </div>
 
           {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
-          <div className="relative z-10 pt-8 px-6 md:pt-14 md:px-12 lg:px-20 max-w-lg pointer-events-auto"
+          <div className="relative z-10 pt-8 px-6 md:pt-14 md:px-12 lg:px-20 max-w-xl pointer-events-auto"
             style={{ animation: "fadeInUp 1s ease-out" }}>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-amber-900 tracking-tight mb-2"
-              style={{ textShadow: "0 2px 10px rgba(139,69,19,0.12)" }}>
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-900/10 bg-white/35 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-900/80">Home Sweet Home</span>
+            </div>
+
+            <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-black text-amber-900 tracking-[-0.05em] leading-none"
+              style={{ textShadow: "0 3px 18px rgba(139,69,19,0.10)" }}>
               MEOW WORLD
             </h1>
-            <p className="text-base md:text-lg text-amber-900/80 font-medium leading-relaxed">
-              ยินดีต้อนรับสู่โลกของเจ้าเหมียว
-            </p>
+
+            <div className="mt-4 max-w-md rounded-[28px] border border-white/50 bg-white/22 p-4 shadow-[0_18px_40px_rgba(120,77,14,0.08)] backdrop-blur-sm">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900/60">Welcome</p>
+              <p className="mt-2 text-base md:text-lg text-amber-900/80 font-medium leading-relaxed">
+                ยินดีต้อนรับสู่โลกของเจ้าเหมียว
+              </p>
+            </div>
           </div>
 
-          {/* ===== BOTTOM NAVIGATION — Minimal Translucent Glass ===== */}
+          {/* ===== BOTTOM NAVIGATION — Premium action tray ===== */}
           <div className="relative z-30 pb-6 px-6 pointer-events-auto">
-            <div className="mx-auto max-w-sm">
+            <div className="mx-auto max-w-md">
               <div
-                className="flex items-center justify-around py-2.5 px-4 rounded-2xl"
+                className="flex items-center justify-around gap-2 rounded-[26px] p-2.5"
                 style={{
                   background: "rgba(255, 255, 255, 0.28)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255, 255, 255, 0.4)",
-                  boxShadow: "0 8px 32px rgba(139, 69, 19, 0.08)",
+                  backdropFilter: "blur(18px)",
+                  WebkitBackdropFilter: "blur(18px)",
+                  border: "1px solid rgba(255, 255, 255, 0.45)",
+                  boxShadow: "0 16px 45px rgba(139, 69, 19, 0.12)",
                 }}
               >
                 <button
                   onClick={() => router.push("/pets/birth")}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                  className="group flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-300 to-rose-300 px-4 py-3 text-amber-950 shadow-[0_10px_25px_rgba(251,146,60,0.25)] transition hover:-translate-y-0.5 active:scale-[0.98]"
                 >
-                  <span className="text-base font-extrabold leading-none">＋</span>
-                  <span>เพิ่มสมาชิก</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/35 text-lg font-extrabold text-amber-900 shadow-sm">＋</span>
+                  <span className="text-sm font-bold">เพิ่มสมาชิก</span>
                 </button>
-
-                <div className="w-px h-6 bg-amber-900/15" />
 
                 <button
                   onClick={() => setShowQRScanner(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                  className="group flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white/35 px-4 py-3 text-amber-900/90 shadow-[0_8px_20px_rgba(120,77,14,0.08)] transition hover:-translate-y-0.5 active:scale-[0.98]"
                 >
-                  <svg className="w-4 h-4 text-amber-900/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="h-4 w-4 text-amber-900/80 transition group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7" rx="1" />
                     <rect x="14" y="3" width="7" height="7" rx="1" />
                     <rect x="3" y="14" width="7" height="7" rx="1" />
                     <rect x="14" y="14" width="7" height="7" rx="1" />
                   </svg>
-                  <span>สแกน QR</span>
+                  <span className="text-sm font-bold">สแกน QR</span>
                 </button>
               </div>
             </div>
@@ -917,33 +924,43 @@ export default function HomePage() {
           </div>
 
           {/* ===== LEFT SIDE: Brand & Welcome Text ===== */}
-          <div className="relative z-10 pt-8 px-6 md:pt-14 md:px-12 lg:px-20 max-w-lg pointer-events-auto"
+          <div className="relative z-10 pt-8 px-6 md:pt-14 md:px-12 lg:px-20 max-w-xl pointer-events-auto"
             style={{ animation: "fadeInUp 1s ease-out" }}>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-amber-900 tracking-tight mb-1"
-              style={{ textShadow: "0 2px 10px rgba(139,69,19,0.12)" }}>
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-900/10 bg-white/35 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-900/80">Home Sweet Home</span>
+            </div>
+
+            <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-black text-amber-900 tracking-[-0.05em] leading-none"
+              style={{ textShadow: "0 3px 18px rgba(139,69,19,0.10)" }}>
               MEOW WORLD
             </h1>
+
             {home && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 text-xs md:text-sm font-semibold text-amber-900 mb-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/40 px-3 py-1.5 text-xs md:text-sm font-semibold text-amber-900 shadow-sm backdrop-blur-sm">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 {home.name}
               </div>
             )}
-            <p className="text-base md:text-lg text-amber-900/80 font-medium leading-relaxed">
-              ยินดีต้อนรับสู่โลกของเจ้าเหมียว
-            </p>
+
+            <div className="mt-4 max-w-md rounded-[28px] border border-white/50 bg-white/22 p-4 shadow-[0_18px_40px_rgba(120,77,14,0.08)] backdrop-blur-sm">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-900/60">Welcome</p>
+              <p className="mt-2 text-base md:text-lg text-amber-900/80 font-medium leading-relaxed">
+                ยินดีต้อนรับสู่โลกของเจ้าเหมียว
+              </p>
+            </div>
 
             {/* Pet avatars summary */}
             {pets.length > 0 && (
-              <div className="mt-5 flex items-center gap-3" style={{ animation: "fadeInUp 1.2s ease-out 0.2s both" }}>
+              <div className="mt-5 flex items-center gap-3 rounded-[22px] border border-white/50 bg-white/18 px-3.5 py-2.5 shadow-[0_12px_26px_rgba(120,77,14,0.08)] backdrop-blur-sm" style={{ animation: "fadeInUp 1.2s ease-out 0.2s both" }}>
                 <div className="flex -space-x-2.5">
-                  {pets.slice(0, 5).map((pet, i) => (
+                  {pets.slice(0, 5).map((pet) => (
                     <div
                       key={pet.id}
-                      className="w-10 h-10 rounded-full border-2 border-white shadow-md flex items-center justify-center text-lg overflow-hidden bg-amber-100"
+                      className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-amber-100 text-lg shadow-md"
                     >
                       {pet.avatar_url ? (
-                        <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                        <img src={pet.avatar_url} alt={pet.name} className="h-full w-full object-cover" />
                       ) : (
                         "🐱"
                       )}
@@ -958,40 +975,38 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* ===== BOTTOM NAVIGATION — Minimal Translucent Glass ===== */}
+          {/* ===== BOTTOM NAVIGATION — Premium action tray ===== */}
           <div className="relative z-30 pb-6 px-6 pointer-events-auto">
-            <div className="mx-auto max-w-sm">
+            <div className="mx-auto max-w-md">
               <div
-                className="flex items-center justify-around py-2.5 px-4 rounded-2xl"
+                className="flex items-center justify-around gap-2 rounded-[26px] p-2.5"
                 style={{
                   background: "rgba(255, 255, 255, 0.28)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255, 255, 255, 0.4)",
-                  boxShadow: "0 8px 32px rgba(139, 69, 19, 0.08)",
+                  backdropFilter: "blur(18px)",
+                  WebkitBackdropFilter: "blur(18px)",
+                  border: "1px solid rgba(255, 255, 255, 0.45)",
+                  boxShadow: "0 16px 45px rgba(139, 69, 19, 0.12)",
                 }}
               >
                 <button
                   onClick={() => router.push("/pets/birth")}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                  className="group flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-300 to-rose-300 px-4 py-3 text-amber-950 shadow-[0_10px_25px_rgba(251,146,60,0.25)] transition hover:-translate-y-0.5 active:scale-[0.98]"
                 >
-                  <span className="text-base font-extrabold leading-none">＋</span>
-                  <span>เพิ่มสมาชิก</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/35 text-lg font-extrabold text-amber-900 shadow-sm">＋</span>
+                  <span className="text-sm font-bold">เพิ่มสมาชิก</span>
                 </button>
-
-                <div className="w-px h-6 bg-amber-900/15" />
 
                 <button
                   onClick={() => setShowQRScanner(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition hover:bg-white/30 active:scale-95 text-amber-900/80 font-bold text-xs md:text-sm"
+                  className="group flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white/35 px-4 py-3 text-amber-900/90 shadow-[0_8px_20px_rgba(120,77,14,0.08)] transition hover:-translate-y-0.5 active:scale-[0.98]"
                 >
-                  <svg className="w-4 h-4 text-amber-900/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="h-4 w-4 text-amber-900/80 transition group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7" rx="1" />
                     <rect x="14" y="3" width="7" height="7" rx="1" />
                     <rect x="3" y="14" width="7" height="7" rx="1" />
                     <rect x="14" y="14" width="7" height="7" rx="1" />
                   </svg>
-                  <span>สแกน QR</span>
+                  <span className="text-sm font-bold">สแกน QR</span>
                 </button>
               </div>
             </div>
